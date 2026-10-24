@@ -1,4 +1,20 @@
-/* ZipMeal Lite – alternatív zipmeal.hu kliens (PWA) */
+/* ZipMeal Lite – alternatív zipmeal.hu kliens (PWA)
+ *
+ * Copyright (C) 2026 KecskeTech
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 'use strict';
 
 const API = 'https://zipmeal.hu/api';
@@ -9,6 +25,60 @@ const store = {
   set access(t) { t ? localStorage.setItem('zm_access', t) : localStorage.removeItem('zm_access'); },
   get refresh() { return localStorage.getItem('zm_refresh'); },
   set refresh(t) { t ? localStorage.setItem('zm_refresh', t) : localStorage.removeItem('zm_refresh'); },
+};
+
+/* ---------- offline cache (localStorage) ----------
+   A havi orders válasz és a munkamenet-adatai localStorage-ba kerülnek, hogy
+   offline is látható legyen a becsült étlap. Az API-t a service worker nem
+   cache-eli, ezért ez az app-szintű cache fontos a PWA offline módhoz. */
+const CACHE_PREFIX = 'zm_cache_v1_';
+const cache = {
+  set(key, value) {
+    try {
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ ts: Date.now(), value }));
+    } catch (_) { /* quota / privát mód */ }
+  },
+  get(key) {
+    try {
+      const raw = localStorage.getItem(CACHE_PREFIX + key);
+      if (!raw) return null;
+      return JSON.parse(raw)?.value ?? null;
+    } catch (_) { return null; }
+  },
+  clear() {
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(CACHE_PREFIX))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch (_) { /* ignore */ }
+  },
+};
+
+function monthCacheKey(cardId, target) { return 'month_' + cardId + '_' + target; }
+
+function saveMonthCache(target) {
+  if (!state.diner?.cardId || !state.data) return;
+  cache.set(monthCacheKey(state.diner.cardId, target), {
+    data: state.data,
+    dataNext: state.dataNext || null,
+  });
+}
+
+function loadMonthCache(target) {
+  if (!state.diner?.cardId) return null;
+  return cache.get(monthCacheKey(state.diner.cardId, target));
+}
+
+const sessionCache = {
+  save() {
+    cache.set('session', {
+      isParent: state.isParent,
+      diners: state.diners,
+      diner: state.diner,
+      profile: state.profile,
+    });
+  },
+  load() { return cache.get('session'); },
 };
 
 /* ---------- api layer ---------- */
@@ -63,18 +133,25 @@ function logout() {
   state.data = null;
   state.dataNext = null;
   state.monthOffset = 0;
+  state.profile = null;
+  state.autoScrolled = false;
+  cache.clear(); // offline másolat törlése kijelentkezéskor
+  setOffline(false);
   showView('login');
 }
 
 /* ---------- app state ---------- */
 const state = {
   diner: null,   // { cardId, institutionId, fullName, group, institutionName }
+  profile: null, // az étkező nyers diner-info objektuma (avatarhoz, cache-hez)
   diners: [],    // szülői fióknál az összes kezelhető étkező (gyermek)
   isParent: false,
   data: null,    // aktuális hónap orders response
   dataNext: null,
   monthOffset: 0, // 0 = current month
   busy: false,
+  offline: false, // offline mód: becsült adatok, módosítás tiltva
+  autoScrolled: false, // már az aznapi ebédre ugrottunk?
 };
 
 /* month key: YYYYMM for a Date shifted by monthOffset */
@@ -109,6 +186,92 @@ function fmtDate(iso) {
   return d.toLocaleDateString('hu-HU', { month: 'short', day: 'numeric', weekday: 'long' });
 }
 
+/* Helyi (magyar) mai nap YYYY-MM-DD formában. Az UTC-s slice éjfél körül
+   elcsúszhat, ezért itt a böngésző helyi idejét használjuk. */
+function todayIso() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function localIso(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+/* A választási / lemondási határidők UTC ISO stringek; a megjelenítés helyi idő. */
+function isDeadlinePassed(iso) {
+  if (!iso) return false;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) && t <= Date.now();
+}
+
+function fmtDeadline(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('hu-HU', {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function isNetworkError(err) {
+  return !navigator.onLine || err instanceof TypeError ||
+    /Failed to fetch|NetworkError|Load failed|ERR_NETWORK|ERR_INTERNET_DISCONNECTED/i.test(err?.message || '');
+}
+
+function setOffline(flag, message) {
+  state.offline = !!flag;
+  const banner = document.getElementById('offline-banner');
+  if (banner) {
+    banner.hidden = !flag;
+    banner.textContent = message ||
+      'Offline mód – a becsült étlap látható. Az étel kiválasztása és a lemondás most nem elérhető.';
+  }
+  document.body.classList.toggle('is-offline', !!flag);
+}
+
+/* ---------- iso hét ---------- */
+function weekInfo(iso) {
+  const base = new Date(iso + 'T12:00:00');
+  const monday = new Date(base);
+  monday.setDate(base.getDate() - ((base.getDay() + 6) % 7));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const thursday = new Date(monday);
+  thursday.setDate(monday.getDate() + 3);
+  const firstThursday = new Date(thursday.getFullYear(), 0, 4, 12);
+  firstThursday.setDate(firstThursday.getDate() - ((firstThursday.getDay() + 6) % 7) + 3);
+  const week = 1 + Math.round((thursday - firstThursday) / 604800000);
+  return { week, monday: localIso(monday), sunday: localIso(sunday) };
+}
+
+function fmtWeekRange(mondayIso, sundayIso) {
+  const m = new Date(mondayIso + 'T12:00:00');
+  const s = new Date(sundayIso + 'T12:00:00');
+  const mName = m.toLocaleDateString('hu-HU', { month: 'long' });
+  const sName = s.toLocaleDateString('hu-HU', { month: 'long' });
+  if (m.getFullYear() !== s.getFullYear()) {
+    return `${m.getFullYear()}. ${mName} ${m.getDate()}. – ${s.getFullYear()}. ${sName} ${s.getDate()}.`;
+  }
+  if (mName === sName) return `${mName} ${m.getDate()}. – ${s.getDate()}.`;
+  return `${mName} ${m.getDate()}. – ${sName} ${s.getDate()}.`;
+}
+
+function groupDaysByWeek(days) {
+  const groups = [];
+  for (const day of days) {
+    const w = weekInfo(day.iso);
+    let group = groups[groups.length - 1];
+    if (!group || group.key !== w.monday) {
+      group = { key: w.monday, week: w.week, monday: w.monday, sunday: w.sunday, days: [] };
+      groups.push(group);
+    }
+    group.days.push(day);
+  }
+  return groups;
+}
+
 /* allergén kódok -> nevek, ha van szótár */
 function allergeneNames(str, dict) {
   if (!str) return '';
@@ -124,8 +287,9 @@ async function fetchParentRole() {
     const details = unwrap(await api('/users/details'));
     const roles = Array.isArray(details?.roles) ? details.roles : [];
     state.isParent = roles.includes('parent');
-  } catch {
-    state.isParent = false;
+  } catch (err) {
+    // Hálózati hiba esetén ne írjuk felül a cache-elt szerepkört.
+    if (!isNetworkError(err)) state.isParent = false;
   }
 }
 
@@ -137,11 +301,13 @@ async function fetchDiners() {
   state.diners = Array.isArray(infos) ? infos : infos ? [infos] : [];
   // Ha a details nem elérhető, a több étkező is szülői fiókra utal.
   state.isParent = state.isParent || state.diners.length > 1;
+  sessionCache.save();
   return state.diners;
 }
 
 function setActiveDiner(me) {
   if (!me) throw new Error('Nem található étkező profil.');
+  state.profile = me;
   state.diner = {
     cardId: me.cardId,
     institutionId: me.institutionId || me.institution?.id,
@@ -153,6 +319,34 @@ function setActiveDiner(me) {
   document.getElementById('user-avatar').textContent =
     (me.fullName || '?').split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   document.getElementById('switch-diner-btn').hidden = !state.isParent;
+  sessionCache.save();
+}
+
+/* Offline indulás: a legutóbbi munkamenet (étkezők + aktív étkező + havi
+   adatok) visszaállítása a localStorage cache-ből. */
+function restoreCachedSession() {
+  const saved = sessionCache.load();
+  if (!saved || !Array.isArray(saved.diners) || !saved.diners.length) return false;
+
+  state.isParent = !!saved.isParent;
+  state.diners = saved.diners;
+  state.autoScrolled = false;
+
+  if (saved.diner && saved.profile) {
+    setActiveDiner(saved.profile);
+    showView('main');
+    setOffline(true);
+    loadMonth(0);
+    return true;
+  }
+
+  state.diner = null;
+  state.profile = null;
+  renderDiners();
+  showView('diner');
+  DINER_ERROR_EL.textContent = 'Offline mód: a becsült adatok láthatók, a módosítás nem elérhető.';
+  DINER_ERROR_EL.hidden = false;
+  return true;
 }
 
 /* Egyes válaszok { result: {...} } csomagolásban is jöhetnek – levesszük */
@@ -188,35 +382,55 @@ async function fetchMonth(offset) {
   const seen = new Set();
   let fallback = null;
   let lastErr = null;
-  for (const body of bodies) {
-    const key = JSON.stringify(body);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    let r;
-    try {
-      r = unwrap(await api('/users/orders', { method: 'POST', body }));
-    } catch (e) {
-      lastErr = e;
-      continue;
+  try {
+    for (const body of bodies) {
+      const key = JSON.stringify(body);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      let r;
+      try {
+        r = unwrap(await api('/users/orders', { method: 'POST', body }));
+      } catch (e) {
+        lastErr = e;
+        continue;
+      }
+      const chunks = [r, r && r.ordersNext].filter(Boolean);
+      const hit = chunks.find((m) => monthHasData(m, target));
+      if (hit) {
+        state.data = hit;
+        state.dataNext = chunks.find((m) => m !== hit) || null;
+        state.monthOffset = offset;
+        saveMonthCache(target);
+        setOffline(false);
+        return;
+      }
+      if (!fallback && chunks.some((m) => m.menu || m.orders)) fallback = r;
     }
-    const chunks = [r, r && r.ordersNext].filter(Boolean);
-    const hit = chunks.find((m) => monthHasData(m, target));
-    if (hit) {
-      state.data = hit;
-      state.dataNext = chunks.find((m) => m !== hit) || null;
+    if (fallback) {
+      // válasz jött, csak a kért hónaphoz nincs menü -> "Nincs menü ebben a hónapban"
+      state.data = fallback;
+      state.dataNext = fallback.ordersNext || null;
       state.monthOffset = offset;
+      saveMonthCache(target);
+      setOffline(false);
       return;
     }
-    if (!fallback && chunks.some((m) => m.menu || m.orders)) fallback = r;
+    throw lastErr || new Error('Nem sikerült betölteni a menüt.');
+  } catch (err) {
+    // Hálózati hiba / offline: a korábban lekért havi adatokból dolgozunk.
+    const cached = loadMonthCache(target);
+    if (cached?.data && isNetworkError(err)) {
+      state.data = cached.data;
+      state.dataNext = cached.dataNext || null;
+      state.monthOffset = offset;
+      setOffline(true);
+      return;
+    }
+    if (!navigator.onLine) {
+      throw new Error('Nincs becsült adat erre a hónapra offline módban.');
+    }
+    throw err;
   }
-  if (fallback) {
-    // válasz jött, csak a kért hónaphoz nincs menü -> "Nincs menü ebben a hónapban"
-    state.data = fallback;
-    state.dataNext = fallback.ordersNext || null;
-    state.monthOffset = offset;
-    return;
-  }
-  throw lastErr || new Error('Nem sikerült betölteni a menüt.');
 }
 
 /* adott dátumhoz (YYYYMMDD) összeállítja a nap adatait:
@@ -228,7 +442,15 @@ function dayInfo(dateKey) {
   const menuA = menu.find((m) => /A$/.test(m.mealType)) || null;
   const menuB = menu.find((m) => /B$/.test(m.mealType)) || null;
   const order = (resp?.orders || []).find((o) => ymd(o.orderDate || o.menuMeal?.mealDate) === dateKey) || null;
-  return { dateKey, iso, menuA, menuB, order };
+  const selectDeadline = order?.selectMenuDeadline || null;
+  const cancelDeadline = order?.cancelDeadline || null;
+  return {
+    dateKey, iso, menuA, menuB, order,
+    selectDeadline,
+    cancelDeadline,
+    selectClosed: isDeadlinePassed(selectDeadline),
+    cancelClosed: isDeadlinePassed(cancelDeadline),
+  };
 }
 
 /* a betöltött hónap napjai, amikhez van menü */
@@ -243,6 +465,8 @@ function collectDays() {
 async function chooseMeal(day, menuLetter) {
   const o = day.order;
   if (!o) throw new Error('Nincs rendelés erre a napra.');
+  if (state.offline) throw new Error('Offline módban nem módosítható.');
+  if (isDeadlinePassed(o.selectMenuDeadline)) throw new Error('A választási határidő lejárt.');
   const body = {
     cardId: state.diner.cardId,
     orderId: o.externalOrderId,
@@ -261,6 +485,10 @@ async function chooseMeal(day, menuLetter) {
 }
 
 async function cancelDay(day) {
+  if (state.offline) throw new Error('Offline módban nem módosítható.');
+  if (isDeadlinePassed(day.order?.cancelDeadline) || day.order?.consumedDate) {
+    throw new Error('A lemondási határidő lejárt.');
+  }
   await api('/users/cancel-meals', {
     method: 'POST',
     body: { cardId: state.diner.cardId, organOrder: { kezdete: day.dateKey, vege: day.dateKey } },
@@ -268,6 +496,10 @@ async function cancelDay(day) {
 }
 
 async function uncancelDay(day) {
+  if (state.offline) throw new Error('Offline módban nem módosítható.');
+  if (isDeadlinePassed(day.order?.cancelDeadline) || day.order?.consumedDate) {
+    throw new Error('A lemondási határidő lejárt.');
+  }
   await api('/users/add-meal', {
     method: 'POST',
     body: { cardId: state.diner.cardId, organOrder: { kezdete: day.dateKey, vege: day.dateKey } },
@@ -302,10 +534,17 @@ function mealCard(day, meal, letter) {
   const chosen = !!day.order?.menuMeal?.chosen &&
     (day.order.menuMeal.mealType || '').endsWith(letter);
   const cancelled = !!day.order?.cancelDate;
+  let reason = '';
+  if (!day.order) reason = 'Erre a napra nincs rendelés.';
+  else if (cancelled) reason = 'A nap le van mondva – előbb vond vissza a lemondást.';
+  else if (state.offline) reason = 'Offline módban nem módosítható.';
+  else if (day.selectClosed) reason = `A választási határidő lejárt (${fmtDeadline(day.selectDeadline)}).`;
+  else if (state.busy) reason = 'Feldolgozás…';
+  const disabled = !!reason;
   return `
-    <button class="meal-choice${chosen ? ' selected' : ''}${cancelled ? ' cancelled' : ''}"
+    <button class="meal-choice${chosen ? ' selected' : ''}${cancelled ? ' cancelled' : ''}${day.selectClosed ? ' closed' : ''}"
             data-day="${day.dateKey}" data-menu="${letter}"
-            ${cancelled || state.busy ? 'disabled' : ''}>
+            title="${esc(reason)}" ${disabled ? 'disabled' : ''}>
       <span class="meal-tag">Ebéd ${letter}</span>
       <div class="meal-name">${esc(meal.mealName)}</div>
       <div class="meal-meta">${meal.energy ? meal.energy + ' kcal' : ''}${allerg ? ' • ' + esc(allerg) : ''}</div>
@@ -316,11 +555,78 @@ function isUnselected(day) {
   return !day.order?.cancelDate && !day.order?.menuMeal?.chosen;
 }
 
-
 function dayBadge(day) {
   if (day.order?.cancelDate) return '<span class="day-badge cancelled">Lemondva</span>';
   if (day.order?.menuMeal?.chosen) return '<span class="day-badge ok">✓ Választva</span>';
   return '<span class="day-badge none">Nincs választva</span>';
+}
+
+/* A választási és a lemondási határidő külön dátum lehet – mindkettőt kiírjuk,
+   a lejártat áthúzva/szürkén. */
+function deadlineChips(day) {
+  if (!day.order) return '';
+  const parts = [];
+  if (day.selectDeadline) {
+    parts.push(`<span class="deadline${day.selectClosed ? ' expired' : ''}" title="Étel kiválasztásának / módosításának határideje">
+      ✎ Választás: ${esc(fmtDeadline(day.selectDeadline))}${day.selectClosed ? ' (lejárt)' : ''}</span>`);
+  }
+  if (day.cancelDeadline) {
+    parts.push(`<span class="deadline${day.cancelClosed ? ' expired' : ''}" title="Ebéd lemondásának / visszavonásának határideje">
+      ✕ Lemondás: ${esc(fmtDeadline(day.cancelDeadline))}${day.cancelClosed ? ' (lejárt)' : ''}</span>`);
+  }
+  return parts.length ? `<div class="deadlines">${parts.join('')}</div>` : '';
+}
+
+function renderDayCard(day, today) {
+  const d = new Date(day.iso + 'T12:00:00');
+  const dayNum = d.getDate();
+  const weekday = d.toLocaleDateString('hu-HU', { weekday: 'short' });
+  const month = d.toLocaleDateString('hu-HU', { month: 'long' });
+  const isToday = day.iso === today;
+  const cancelled = !!day.order?.cancelDate;
+
+  let cancelReason = '';
+  if (!day.order) cancelReason = 'Erre a napra nincs rendelés.';
+  else if (day.order.consumedDate) cancelReason = 'Az ebéd már elfogyasztva.';
+  else if (state.offline) cancelReason = 'Offline módban nem módosítható.';
+  else if (day.cancelClosed) cancelReason = `A lemondási határidő lejárt (${fmtDeadline(day.cancelDeadline)}).`;
+  else if (state.busy) cancelReason = 'Feldolgozás…';
+
+  return `
+    <section class="day-card${isToday ? ' day-today' : ''}${isUnselected(day) ? ' day-unselected' : ''}"
+             data-date="${day.iso}">
+      <div class="day-head">
+        <div class="day-num"><b>${dayNum}</b><small>${esc(weekday)}</small></div>
+        <span class="day-title">${esc(month)}${isToday ? ' <span class="today-tag">Ma</span>' : ''}</span>
+        ${dayBadge(day)}
+      </div>
+      <div class="day-body">
+        ${deadlineChips(day)}
+        <div class="meal-choices">
+          ${mealCard(day, day.menuA, 'A')}
+          ${mealCard(day, day.menuB, 'B')}
+        </div>
+        <button class="btn ${cancelled ? 'primary' : 'danger'} day-cancel${day.cancelClosed ? ' closed' : ''}"
+                data-day="${day.dateKey}" data-action="${cancelled ? 'uncancel' : 'cancel'}"
+                title="${esc(cancelReason)}" ${cancelReason ? 'disabled' : ''}>
+          ${cancelled ? 'Mégis kérem (visszavonás)' : 'Ebéd lemondása'}
+        </button>
+      </div>
+    </section>`;
+}
+
+/* Nyitáskor az aznapi ebédre (ha nincs, a következő elérhető napra) ugrunk. */
+function focusToday(groups) {
+  if (state.autoScrolled || state.monthOffset !== 0) return;
+  const today = todayIso();
+  const all = groups.flatMap((g) => g.days);
+  const target = all.find((d) => d.iso === today) || all.find((d) => d.iso > today);
+  if (!target) return;
+  state.autoScrolled = true;
+  requestAnimationFrame(() => {
+    const el = DAYS_EL.querySelector(`.day-card[data-date="${target.iso}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 function renderDays() {
@@ -330,33 +636,23 @@ function renderDays() {
     DAYS_EL.innerHTML = '<p class="foot">Nincs menü ebben a hónapban.</p>';
     return;
   }
-  const today = new Date().toISOString().slice(0, 10);
-  const html = days.map((day) => {
-    const d = new Date(day.iso + 'T12:00:00Z');
-    const dayNum = d.getUTCDate();
-    const weekday = d.toLocaleDateString('hu-HU', { weekday: 'short' });
-    const month = d.toLocaleDateString('hu-HU', { month: 'long' });
+  const today = todayIso();
+  const groups = groupDaysByWeek(days);
+  DAYS_EL.innerHTML = groups.map((group) => {
+    const chosen = group.days.filter((d) => d.order?.menuMeal?.chosen && !d.order?.cancelDate).length;
+    const current = group.days.some((d) => d.iso === today);
     return `
-    <section class="day-card${day.iso === today ? ' day-today' : ''}${isUnselected(day) ? ' day-unselected' : ''}">
-      <div class="day-head">
-        <div class="day-num"><b>${dayNum}</b><small>${esc(weekday)}</small></div>
-        <span class="day-title">${esc(month)}</span>
-        ${dayBadge(day)}
-      </div>
-      <div class="day-body">
-        <div class="meal-choices">
-          ${mealCard(day, day.menuA, 'A')}
-          ${mealCard(day, day.menuB, 'B')}
+      <section class="week-group${current ? ' week-current' : ''}">
+        <header class="week-head">
+          <span class="week-label">${esc(fmtWeekRange(group.monday, group.sunday))}${current ? ' · ez a hét' : ''}</span>
+          <span class="week-meta">${group.week}. hét · ${chosen}/${group.days.length} ebéd kiválasztva</span>
+        </header>
+        <div class="week-days">
+          ${group.days.map((day) => renderDayCard(day, today)).join('')}
         </div>
-        <button class="btn ${day.order?.cancelDate ? 'primary' : 'danger'} day-cancel"
-                data-day="${day.dateKey}" data-action="${day.order?.cancelDate ? 'uncancel' : 'cancel'}"
-                ${!day.order || state.busy ? 'disabled' : ''}>
-          ${day.order?.cancelDate ? 'Mégis kérem (visszavonás)' : 'Ebéd lemondása'}
-        </button>
-      </div>
-    </section>`;
+      </section>`;
   }).join('');
-  DAYS_EL.innerHTML = html;
+  focusToday(groups);
 }
 /* ---------- diner (child) selector ---------- */
 function dinerInitials(name) {
@@ -388,6 +684,7 @@ async function chooseDiner(cardId) {
   state.monthOffset = 0;
   state.data = null;
   state.dataNext = null;
+  state.autoScrolled = false;
   showView('main');
   await loadMonth(0);
 }
@@ -397,8 +694,11 @@ async function startSession() {
   await fetchParentRole();
   const diners = await fetchDiners();
   if (!diners.length) throw new Error('Nem található étkező profil.');
+  state.autoScrolled = false;
+  sessionCache.save();
   if (state.isParent) {
     state.diner = null;
+    state.profile = null;
     DINER_ERROR_EL.hidden = true;
     renderDiners();
     showView('diner');
@@ -419,11 +719,18 @@ async function loadMonth(offset, silent = false) {
     setStatus('');
   } catch (e) {
     setStatus('Hiba: ' + e.message);
+    renderDays();
   }
 }
 
 async function withBusy(fn) {
   if (state.busy) return;
+  if (state.offline || !navigator.onLine) {
+    setOffline(true);
+    setStatus('Offline módban nem lehet módosítani. Csatlakozz az internethez!');
+    renderDays();
+    return;
+  }
   state.busy = true;
   renderDays(); // gombok letiltása
   try {
@@ -460,7 +767,9 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     store.refresh = d.refresh_token;
     await startSession();
   } catch (err) {
-    if (err instanceof TypeError) {
+    if (!navigator.onLine) {
+      errEl.textContent = 'Nincs internetkapcsolat. Az offline módhoz korábbi bejelentkezés szükséges.';
+    } else if (err instanceof TypeError) {
       errEl.textContent = 'Hálózati hiba: a böngésző blokkolja a kérést. Valószínűleg file://-ként nyitottad az oldalt. Futtass szerverrel: python -m http.server -d c:\\prog\\zipm_clone\\webui 8000, majd nyisd: http://localhost:8000';
     } else {
       errEl.textContent = err.message;
@@ -519,18 +828,64 @@ DAYS_EL.addEventListener('click', (e) => {
   }
 });
 
+/* ---------- online / offline ---------- */
+async function handleOnline() {
+  setOffline(false);
+  if (!store.access) return;
+  try {
+    if (store.refresh) {
+      const ok = await refreshTokens();
+      if (!ok && !store.access) { logout(); return; }
+    }
+    if (state.diner) {
+      await fetchMonth(state.monthOffset);
+      renderDays();
+      setStatus('');
+    } else {
+      await startSession();
+    }
+  } catch (e) {
+    setStatus('Hiba: ' + e.message);
+    if (state.data) renderDays();
+  }
+}
+
 /* ---------- init ---------- */
 (async function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
+
+  window.addEventListener('offline', () => {
+    setOffline(true);
+    if (state.data) renderDays();
+  });
+  window.addEventListener('online', handleOnline);
+
+  // Lejárt határidők frissítése a nyitva hagyott oldalon is.
+  setInterval(() => {
+    if (!document.getElementById('main-view').hidden && !state.busy) renderDays();
+  }, 60000);
+
+  if (!navigator.onLine) {
+    setOffline(true);
+    if (store.access && store.refresh) restoreCachedSession();
+    return;
+  }
+
   if (store.access && store.refresh) {
     try {
       const ok = await refreshTokens(); // induláskor frissít, ha lehet
       if (!ok && !store.access) return;
       await startSession();
-    } catch {
-      logout();
+    } catch (err) {
+      // Csak hálózati hiba esetén használjuk a cache-elt munkamenetet;
+      // lejárt/érvénytelen token után jelentkezni kell.
+      if (isNetworkError(err) || !navigator.onLine) {
+        if (!restoreCachedSession()) logout();
+      } else {
+        logout();
+      }
     }
   }
 })();

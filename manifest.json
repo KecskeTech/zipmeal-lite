@@ -1,11 +1,15 @@
 {
   "name": "ZipMeal Lite",
   "short_name": "ZipMeal",
+  "description": "Nem hivatalos, offline is használható ZipMeal ebédválasztó",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f4f4fb",
   "theme_color": "#4630eb",
   "lang": "hu",
+  "categories": ["food", "education", "utilities"],
   "icons": [
     {
       "src": "icon.svg",

@@ -167,6 +167,29 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   display: flex; align-items: center; gap: 12px;
   padding-top: 10px; padding-bottom: 10px;
 }
+/* Az oldal tetején lévő gombok kapjanak saját háttérkártyát, hogy
+   egyértelműen gombnak látszódjanak a világos topbaron. */
+.topbar .btn {
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--primary);
+  box-shadow: 0 2px 10px rgba(46, 34, 140, .13);
+}
+.topbar .btn:hover:not(:disabled) {
+  background: var(--primary-soft);
+  border-color: rgba(70, 48, 235, .25);
+  box-shadow: 0 4px 14px rgba(46, 34, 140, .18);
+}
+
+/* ---------- offline sáv ---------- */
+.offline-banner {
+  position: sticky; top: 63px; z-index: 9;
+  margin: 0; padding: 9px 16px;
+  text-align: center;
+  background: #fff4d6; color: #7a4b00;
+  border-bottom: 1px solid #f0d48a;
+  font-size: .8rem; font-weight: 600;
+}
 .avatar {
   width: 42px; height: 42px; flex: none;
   display: grid; place-items: center;
@@ -201,15 +224,38 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 }
 @keyframes pop { from { opacity: 0; transform: translate(-50%, 8px); } }
 
-/* ---------- day cards ---------- */
-.days {
+/* ---------- weekly layout ---------- */
+.days { padding-bottom: 10px; }
+
+.week-group {
+  margin: 0 0 26px;
+  padding: 14px 14px 18px;
+  background: rgba(255, 255, 255, .5);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 4px);
+}
+.week-group:last-child { margin-bottom: 6px; }
+.week-group.week-current {
+  background: linear-gradient(180deg, rgba(70, 48, 235, .06), rgba(255, 255, 255, .55) 120px);
+  border-color: rgba(70, 48, 235, .22);
+}
+.week-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: 4px 14px;
+  padding: 2px 6px 12px;
+}
+.week-label {
+  font-weight: 800; font-size: 1.02rem; letter-spacing: -.01em;
+  text-transform: capitalize;
+}
+.week-meta { color: var(--muted); font-size: .78rem; font-weight: 600; }
+.week-days {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   gap: 16px;
   align-items: start;
-  padding-bottom: 10px;
 }
-@media (max-width: 420px) { .days { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .week-days { grid-template-columns: 1fr; } }
 
 .day-card {
   background: var(--card);
@@ -217,6 +263,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   box-shadow: var(--shadow);
   overflow: hidden;
   transition: transform .15s, box-shadow .15s;
+  scroll-margin-top: 88px;
 }
 .day-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .day-card.day-today { outline: 2px solid var(--primary); }
@@ -258,6 +305,31 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .day-badge.none { color: var(--muted); background: #eceef5; }
 .day-badge.cancelled { color: var(--danger); background: rgba(217,54,62,.12); }
 
+.today-tag {
+  display: inline-block; margin-left: 4px;
+  font-size: .64rem; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #fff; background: var(--primary);
+  border-radius: 999px; padding: 2px 7px; vertical-align: 2px;
+}
+
+/* Határidők: a választási és a lemondási dátum külön is látszik. */
+.deadlines {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 10px;
+}
+.deadline {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .7rem; font-weight: 700;
+  color: #3d3f56; background: #f1f2f9;
+  border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 9px;
+}
+.deadline.expired {
+  color: var(--muted); background: #f6f6f9;
+  text-decoration: line-through; opacity: .75;
+}
+
 .day-body { padding: 14px 16px 16px; }
 
 .meal-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -278,6 +350,8 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .meal-choice:hover:not(:disabled) { border-color: var(--primary-2); transform: translateY(-1px); }
 .meal-choice:active:not(:disabled) { transform: scale(.98); }
 .meal-choice:disabled { cursor: default; opacity: .6; }
+.meal-choice.closed:not(.selected) { filter: grayscale(.9); opacity: .45; }
+.day-cancel.closed { filter: grayscale(1); opacity: .5; }
 
 .meal-tag {
   display: inline-flex; align-items: center; gap: 6px;
@@ -317,3 +391,4 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .day-cancel { width: 100%; margin-top: 12px; }
 
 .foot { text-align: center; color: var(--muted); font-size: .75rem; padding: 18px 0 26px; }
+.foot a { color: var(--primary); font-weight: 600; }
