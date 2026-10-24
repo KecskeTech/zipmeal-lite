@@ -5,7 +5,7 @@ webalkalmazás, backend nélkül.
 
 ## Élő oldal
 
-https://kecsketech.github.io/zipmeal-lite/
+https://ziplite.kecske.win/
 
 ## Funkciók
 
