@@ -40,7 +40,13 @@
       <p class="subtitle">Melyik gyermeked ebédjét szeretnéd kezelni?</p>
       <div id="diner-list" class="diner-list"></div>
       <p id="diner-error" class="error" hidden></p>
-      <button id="diner-logout" class="btn ghost small">⏻ Kilépés</button>
+      <button id="diner-logout" class="btn ghost small">
+        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <path d="M16 17l5-5-5-5"/>
+          <path d="M21 12H9"/>
+        </svg>Kilépés
+      </button>
     </div>
   </div>
 
@@ -53,18 +59,34 @@
           <span id="user-name" class="user-name"></span>
           <span id="user-group" class="user-group"></span>
         </div>
-        <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" hidden>👥 Gyermek</button>
-        <button id="logout-btn" class="btn ghost small" title="Kilépés">⏻ Kilépés</button>
+        <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" hidden>
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>Gyermek
+        </button>
+        <button id="logout-btn" class="btn ghost small" title="Kilépés">
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <path d="M16 17l5-5-5-5"/>
+            <path d="M21 12H9"/>
+          </svg>Kilépés
+        </button>
       </div>
     </header>
 
     <p id="offline-banner" class="offline-banner" hidden></p>
 
     <div class="view">
-      <div class="month-nav">
-        <button id="prev-month" class="btn nav" aria-label="Előző hónap">‹</button>
-        <span id="month-label" class="month-label"></span>
-        <button id="next-month" class="btn nav" aria-label="Következő hónap">›</button>
+      <div class="week-nav">
+        <button id="prev-week" class="btn nav" aria-label="Előző hét">‹</button>
+        <span id="week-label" class="week-nav-label" aria-live="polite">
+          <b id="week-number"></b>
+          <small id="week-dates"></small>
+        </span>
+        <button id="next-week" class="btn nav" aria-label="Következő hét">›</button>
       </div>
 
       <main id="days" class="days"></main>

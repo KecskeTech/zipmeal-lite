@@ -52,6 +52,12 @@ body {
 .btn.danger { background: transparent; color: var(--danger); }
 .btn.danger:hover { background: rgba(217,54,62,.08); }
 .btn.small { padding: 7px 14px; font-size: .8rem; }
+.btn-icon {
+  width: 15px; height: 15px; display: inline-block;
+  vertical-align: -3px; margin-right: 6px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 .btn.nav {
   width: 42px; height: 42px; padding: 0;
   font-size: 1.4rem; color: var(--primary);
@@ -201,15 +207,22 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .user-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-group { color: var(--muted); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ---------- month nav ---------- */
-.month-nav {
+/* ---------- week nav ---------- */
+.week-nav {
   display: flex; align-items: center; justify-content: center; gap: 14px;
   margin: 18px 0 16px;
 }
-.month-label {
-  font-weight: 800; font-size: 1.15rem; text-transform: capitalize;
-  min-width: 170px; text-align: center;
-  letter-spacing: -.01em;
+.week-nav-label {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 0; text-align: center; line-height: 1.2;
+  flex: 1 1 auto;
+}
+.week-nav-label b {
+  font-weight: 800; font-size: 1.12rem; letter-spacing: -.01em;
+}
+.week-nav-label small {
+  color: var(--muted); font-size: .82rem; font-weight: 600;
+  text-transform: capitalize;
 }
 
 /* ---------- toast ---------- */

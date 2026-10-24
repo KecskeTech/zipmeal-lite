@@ -132,7 +132,9 @@ function logout() {
   state.isParent = false;
   state.data = null;
   state.dataNext = null;
-  state.monthOffset = 0;
+  state.months = {};
+  state.weekOffset = 0;
+  state.weekRange = null;
   state.profile = null;
   state.autoScrolled = false;
   cache.clear(); // offline másolat törlése kijelentkezéskor
@@ -146,15 +148,17 @@ const state = {
   profile: null, // az étkező nyers diner-info objektuma (avatarhoz, cache-hez)
   diners: [],    // szülői fióknál az összes kezelhető étkező (gyermek)
   isParent: false,
-  data: null,    // aktuális hónap orders response
+  data: null,    // a kiválasztott hétre összefűzött orders response
   dataNext: null,
-  monthOffset: 0, // 0 = current month
+  months: {},    // hónaponkénti API-válaszok (memória-cache a heti navigációhoz)
+  weekOffset: 0, // 0 = aktuális hét, -1 = előző hét, +1 = következő hét
+  weekRange: null, // { week, monday, sunday, offset }
   busy: false,
   offline: false, // offline mód: becsült adatok, módosítás tiltva
   autoScrolled: false, // már az aznapi ebédre ugrottunk?
 };
 
-/* month key: YYYYMM for a Date shifted by monthOffset */
+/* month key: YYYYMM for a Date shifted by the given month offset */
 function monthKey(offset) {
   const d = new Date();
   d.setDate(1);
@@ -162,10 +166,34 @@ function monthKey(offset) {
   return '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0');
 }
 
-function monthLabel(key) {
+/* Egy adott YYYYMM hónap offsetje az aktuális hónaphoz képest (a fetchMonth
+   ezt várja). Heti navigációnál a kiválasztott hét hónapjait kérjük le. */
+function monthOffsetForKey(key) {
   const y = +key.slice(0, 4), m = +key.slice(4, 6) - 1;
-  const d = new Date(y, m, 1);
-  return d.toLocaleDateString('hu-HU', { month: 'long', year: 'numeric' });
+  const now = new Date();
+  return (y - now.getFullYear()) * 12 + (m - now.getMonth());
+}
+
+/* A mai naphoz viszonyított ISO hét (hétfő–vasárnap). */
+function weekRangeForOffset(offset) {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + offset * 7);
+  const info = weekInfo(localIso(d));
+  return { week: info.week, monday: info.monday, sunday: info.sunday, offset };
+}
+
+/* A hét által érintett hónapok YYYYMM kulcsai (hónaphatáron kettő is lehet). */
+function monthsForWeek(range) {
+  const out = [];
+  const d = new Date(range.monday + 'T12:00:00');
+  const end = new Date(range.sunday + 'T12:00:00');
+  while (d <= end) {
+    const key = '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0');
+    if (!out.includes(key)) out.push(key);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
 }
 
 /* orderDate/mealDate -> 'YYYYMMDD' (UTC dátumrész, API kulcs – a szerver ezt várja,
@@ -258,20 +286,6 @@ function fmtWeekRange(mondayIso, sundayIso) {
   return `${mName} ${m.getDate()}. – ${sName} ${s.getDate()}.`;
 }
 
-function groupDaysByWeek(days) {
-  const groups = [];
-  for (const day of days) {
-    const w = weekInfo(day.iso);
-    let group = groups[groups.length - 1];
-    if (!group || group.key !== w.monday) {
-      group = { key: w.monday, week: w.week, monday: w.monday, sunday: w.sunday, days: [] };
-      groups.push(group);
-    }
-    group.days.push(day);
-  }
-  return groups;
-}
-
 /* allergén kódok -> nevek, ha van szótár */
 function allergeneNames(str, dict) {
   if (!str) return '';
@@ -336,7 +350,7 @@ function restoreCachedSession() {
     setActiveDiner(saved.profile);
     showView('main');
     setOffline(true);
-    loadMonth(0);
+    loadWeek(0);
     return true;
   }
 
@@ -399,10 +413,9 @@ async function fetchMonth(offset) {
       if (hit) {
         state.data = hit;
         state.dataNext = chunks.find((m) => m !== hit) || null;
-        state.monthOffset = offset;
         saveMonthCache(target);
         setOffline(false);
-        return;
+        return { data: hit, dataNext: state.dataNext };
       }
       if (!fallback && chunks.some((m) => m.menu || m.orders)) fallback = r;
     }
@@ -410,10 +423,9 @@ async function fetchMonth(offset) {
       // válasz jött, csak a kért hónaphoz nincs menü -> "Nincs menü ebben a hónapban"
       state.data = fallback;
       state.dataNext = fallback.ordersNext || null;
-      state.monthOffset = offset;
       saveMonthCache(target);
       setOffline(false);
-      return;
+      return { data: fallback, dataNext: state.dataNext };
     }
     throw lastErr || new Error('Nem sikerült betölteni a menüt.');
   } catch (err) {
@@ -422,9 +434,8 @@ async function fetchMonth(offset) {
     if (cached?.data && isNetworkError(err)) {
       state.data = cached.data;
       state.dataNext = cached.dataNext || null;
-      state.monthOffset = offset;
       setOffline(true);
-      return;
+      return { data: cached.data, dataNext: state.dataNext };
     }
     if (!navigator.onLine) {
       throw new Error('Nincs becsült adat erre a hónapra offline módban.');
@@ -453,12 +464,14 @@ function dayInfo(dateKey) {
   };
 }
 
-/* a betöltött hónap napjai, amikhez van menü */
+/* A kiválasztott hét napjai, amelyekhez van menü. A hónaphatáron átnyúló
+   heteket a loadWeek két hónap adataiból fűzi össze. */
 function collectDays() {
+  const range = state.weekRange;
+  if (!range) return [];
   const keys = new Set((state.data?.menu || []).map((m) => ymd(m.mealDate)));
-  const target = monthKey(state.monthOffset);
   return [...keys].sort().map((k) => dayInfo(k))
-    .filter((d) => d.iso.slice(0, 7).replace('-', '') === target);
+    .filter((d) => d.iso >= range.monday && d.iso <= range.sunday);
 }
 
 /* ---------- mutations ---------- */
@@ -616,11 +629,10 @@ function renderDayCard(day, today) {
 }
 
 /* Nyitáskor az aznapi ebédre (ha nincs, a következő elérhető napra) ugrunk. */
-function focusToday(groups) {
-  if (state.autoScrolled || state.monthOffset !== 0) return;
+function focusToday(days) {
+  if (state.autoScrolled || state.weekOffset !== 0) return;
   const today = todayIso();
-  const all = groups.flatMap((g) => g.days);
-  const target = all.find((d) => d.iso === today) || all.find((d) => d.iso > today);
+  const target = days.find((d) => d.iso === today) || days.find((d) => d.iso > today);
   if (!target) return;
   state.autoScrolled = true;
   requestAnimationFrame(() => {
@@ -631,28 +643,31 @@ function focusToday(groups) {
 
 function renderDays() {
   const days = collectDays();
-  document.getElementById('month-label').textContent = monthLabel(monthKey(state.monthOffset));
+  const range = state.weekRange || weekRangeForOffset(state.weekOffset);
+  const weekNumEl = document.getElementById('week-number');
+  const weekDatesEl = document.getElementById('week-dates');
+  if (weekNumEl) weekNumEl.textContent = `${range.week}. hét`;
+  if (weekDatesEl) weekDatesEl.textContent = fmtWeekRange(range.monday, range.sunday);
+
   if (!days.length) {
-    DAYS_EL.innerHTML = '<p class="foot">Nincs menü ebben a hónapban.</p>';
+    DAYS_EL.innerHTML = '<p class="foot">Nincs menü ezen a héten.</p>';
     return;
   }
+
   const today = todayIso();
-  const groups = groupDaysByWeek(days);
-  DAYS_EL.innerHTML = groups.map((group) => {
-    const chosen = group.days.filter((d) => d.order?.menuMeal?.chosen && !d.order?.cancelDate).length;
-    const current = group.days.some((d) => d.iso === today);
-    return `
-      <section class="week-group${current ? ' week-current' : ''}">
-        <header class="week-head">
-          <span class="week-label">${esc(fmtWeekRange(group.monday, group.sunday))}${current ? ' · ez a hét' : ''}</span>
-          <span class="week-meta">${group.week}. hét · ${chosen}/${group.days.length} ebéd kiválasztva</span>
-        </header>
-        <div class="week-days">
-          ${group.days.map((day) => renderDayCard(day, today)).join('')}
-        </div>
-      </section>`;
-  }).join('');
-  focusToday(groups);
+  const current = today >= range.monday && today <= range.sunday;
+  const chosen = days.filter((d) => d.order?.menuMeal?.chosen && !d.order?.cancelDate).length;
+  DAYS_EL.innerHTML = `
+    <section class="week-group${current ? ' week-current' : ''}">
+      <header class="week-head">
+        <span class="week-label">${current ? 'Ez a hét' : 'Kiválasztott hét'}</span>
+        <span class="week-meta">${chosen}/${days.length} ebéd kiválasztva</span>
+      </header>
+      <div class="week-days">
+        ${days.map((day) => renderDayCard(day, today)).join('')}
+      </div>
+    </section>`;
+  focusToday(days);
 }
 /* ---------- diner (child) selector ---------- */
 function dinerInitials(name) {
@@ -681,12 +696,14 @@ async function chooseDiner(cardId) {
   const me = state.diners.find((d) => d.cardId === cardId);
   if (!me) return;
   setActiveDiner(me);
-  state.monthOffset = 0;
+  state.months = {};
+  state.weekOffset = 0;
+  state.weekRange = null;
   state.data = null;
   state.dataNext = null;
   state.autoScrolled = false;
   showView('main');
-  await loadMonth(0);
+  await loadWeek(0);
 }
 
 /* Bejelentkezés / munkamenet indítása: szülőnél előbb étkezőt választunk. */
@@ -706,21 +723,88 @@ async function startSession() {
   }
   setActiveDiner(diners[0]);
   showView('main');
-  await loadMonth(0);
+  await loadWeek(0);
 }
 
 
 /* ---------- orchestration ---------- */
-async function loadMonth(offset, silent = false) {
-  if (!silent) setStatus('Betöltés…');
-  try {
-    await fetchMonth(offset);
-    renderDays();
-    setStatus('');
-  } catch (e) {
-    setStatus('Hiba: ' + e.message);
-    renderDays();
+/* Egy hónap adatainak biztosítása. A hétváltásnál csak akkor kérünk újra,
+   ha még nincs a memória-cache-ben (vagy módosítás után force=true). */
+async function ensureMonthPayload(key, force = false) {
+  if (!force && state.months[key]) return state.months[key];
+  const payload = await fetchMonth(monthOffsetForKey(key));
+  const normalized = { data: payload?.data || null, dataNext: payload?.dataNext || null };
+  state.months[key] = normalized;
+  return normalized;
+}
+
+/* A hét napjaihoz szükséges hónapok válaszainak összefűzése. A hónaphatáron
+   átnyúló hétnél így a két hónap menüje/rendelése is megjelenik. */
+function mergeMonthPayloads(payloads) {
+  const menu = [], orders = [];
+  const seenMenu = new Set(), seenOrder = new Set();
+  let allergenes = {};
+  for (const payload of payloads) {
+    for (const chunk of [payload?.data, payload?.dataNext]) {
+      if (!chunk) continue;
+      if (!Object.keys(allergenes).length && chunk.allergenes) allergenes = chunk.allergenes;
+      for (const m of chunk.menu || []) {
+        const key = ymd(m.mealDate) + '|' + m.mealType;
+        if (seenMenu.has(key)) continue;
+        seenMenu.add(key);
+        menu.push(m);
+      }
+      for (const o of chunk.orders || []) {
+        const key = ymd(o.orderDate || o.menuMeal?.mealDate) + '|' +
+          (o.externalOrderId ?? o.orderVersion ?? '');
+        if (seenOrder.has(key)) continue;
+        seenOrder.add(key);
+        orders.push(o);
+      }
+    }
   }
+  return { menu, orders, allergenes };
+}
+
+let weekLoadSeq = 0;
+
+async function loadWeek(offset, force = false) {
+  const seq = ++weekLoadSeq;
+  state.weekOffset = offset;
+  state.weekRange = weekRangeForOffset(offset);
+  state.autoScrolled = state.autoScrolled && offset === 0;
+
+  if (!state.diner) return;
+  if (force) state.months = {};
+
+  setStatus('Betöltés…');
+  const months = monthsForWeek(state.weekRange);
+  const payloads = [];
+  let lastErr = null;
+
+  for (const key of months) {
+    try {
+      payloads.push(await ensureMonthPayload(key, force));
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  // Közben másik hétre navigált a felhasználó: a régi választ eldobjuk.
+  if (seq !== weekLoadSeq) return;
+
+  if (!payloads.length) {
+    state.data = null;
+    state.dataNext = null;
+    setStatus('Hiba: ' + (lastErr?.message || 'Nem sikerült betölteni a menüt.'));
+    renderDays();
+    return;
+  }
+
+  state.data = mergeMonthPayloads(payloads);
+  state.dataNext = null;
+  renderDays();
+  setStatus(lastErr ? 'Figyelem: ehhez a hétre csak részleges adat érhető el.' : '');
 }
 
 async function withBusy(fn) {
@@ -735,7 +819,7 @@ async function withBusy(fn) {
   renderDays(); // gombok letiltása
   try {
     await fn();
-    await fetchMonth(state.monthOffset); // friss orderVersion miatt mindig újra
+    await loadWeek(state.weekOffset, true); // friss orderVersion miatt mindig újra
     renderDays();
     setStatus('');
   } catch (e) {
@@ -787,7 +871,9 @@ document.getElementById('switch-diner-btn').addEventListener('click', () => {
   if (!state.isParent) return;
   state.data = null;
   state.dataNext = null;
-  state.monthOffset = 0;
+  state.months = {};
+  state.weekOffset = 0;
+  state.weekRange = null;
   setStatus('');
   DINER_ERROR_EL.hidden = true;
   renderDiners();
@@ -811,8 +897,8 @@ DINERS_EL.addEventListener('click', async (e) => {
   }
 });
 
-document.getElementById('prev-month').addEventListener('click', () => loadMonth(state.monthOffset - 1));
-document.getElementById('next-month').addEventListener('click', () => loadMonth(state.monthOffset + 1));
+document.getElementById('prev-week').addEventListener('click', () => loadWeek(state.weekOffset - 1));
+document.getElementById('next-week').addEventListener('click', () => loadWeek(state.weekOffset + 1));
 
 DAYS_EL.addEventListener('click', (e) => {
   const mealBtn = e.target.closest('.meal-choice');
@@ -838,9 +924,7 @@ async function handleOnline() {
       if (!ok && !store.access) { logout(); return; }
     }
     if (state.diner) {
-      await fetchMonth(state.monthOffset);
-      renderDays();
-      setStatus('');
+      await loadWeek(state.weekOffset, true);
     } else {
       await startSession();
     }

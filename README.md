@@ -10,7 +10,9 @@ https://kecsketech.github.io/zipmeal-lite/
 ## Funkciók
 
 - Bejelentkezés ZipMeal-fiókkal
-- Havi étlap lekérdezése, **heti bontásban** megjelenítve (hét sorszámmal és dátumtartománnyal)
+- Havi étlap lekérdezése, **egy hétre bontva**: a felső nyilakkal hétre előre/hátra
+  lehet lépni (a hónaphatáron átnyúló heteket is kezeli), hét sorszámmal és
+  dátumtartománnyal
 - Az étel kiválasztása, lemondása és a lemondás visszavonása
 - A **választási (`selectMenuDeadline`) és lemondási (`cancelDeadline`) határidők**
   külön megjelenítése; a lejárt határidő után az érintett gombok szürkék / letiltottak
@@ -24,7 +26,7 @@ https://kecsketech.github.io/zipmeal-lite/
 
 A service worker az app shellt (HTML/CSS/JS) cache-eli, az étlap-adatokat pedig az
 alkalmazás menti el a `localStorage`-ba étkezőnként és hónaponként. Internet nélkül
-az utoljára megnyitott hónap étlapja és a választások láthatók; a választó- és
+a korábban betöltött hetek étlapja és a választások láthatók; a választó- és
 lemondásgombok ilyenkor le vannak tiltva, és egy figyelmeztető sáv jelzi az offline
 állapotot.
 
