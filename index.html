@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4630eb">
+<title>ZipMeal Lite – ebédválasztó</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="login-view" class="view login-view">
+    <form id="login-form" class="login-card">
+      <div class="login-logo">🍽️</div>
+      <h1>ZipMeal <span>Lite</span></h1>
+      <p class="subtitle">Ebédválasztás, ahogy kellene</p>
+      <div class="login-fields">
+        <label>Email
+          <input type="email" id="login-email" autocomplete="email" required>
+        </label>
+        <label>Jelszó
+          <input type="password" id="login-password" autocomplete="current-password" required>
+        </label>
+      </div>
+      <button type="submit" class="btn primary lg">Bejelentkezés</button>
+      <p id="login-error" class="error" hidden></p>
+    </form>
+  </div>
+
+  <!-- DINER / CHILD SELECTOR (parent accounts) -->
+  <div id="diner-view" class="view diner-view" hidden>
+    <div class="diner-card">
+      <div class="diner-logo">👨‍👩‍👧</div>
+      <h1>Étkező kiválasztása</h1>
+      <p class="subtitle">Melyik gyermeked ebédjét szeretnéd kezelni?</p>
+      <div id="diner-list" class="diner-list"></div>
+      <p id="diner-error" class="error" hidden></p>
+      <button id="diner-logout" class="btn ghost small">⏻ Kilépés</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main-view" hidden>
+    <header class="topbar">
+      <div class="view topbar-inner">
+        <span id="user-avatar" class="avatar">?</span>
+        <div class="user-info">
+          <span id="user-name" class="user-name"></span>
+          <span id="user-group" class="user-group"></span>
+        </div>
+        <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" hidden>👥 Gyermek</button>
+        <button id="logout-btn" class="btn ghost small" title="Kilépés">⏻ Kilépés</button>
+      </div>
+    </header>
+
+    <div class="view">
+      <div class="month-nav">
+        <button id="prev-month" class="btn nav" aria-label="Előző hónap">‹</button>
+        <span id="month-label" class="month-label"></span>
+        <button id="next-month" class="btn nav" aria-label="Következő hónap">›</button>
+      </div>
+
+      <main id="days" class="days"></main>
+      <p id="status" class="toast" hidden></p>
+      <footer class="foot">ZipMeal Lite – nem hivatalos kliens</footer>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
