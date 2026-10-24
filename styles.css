@@ -352,6 +352,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .meal-choice:disabled { cursor: default; opacity: .6; }
 .meal-choice.closed:not(.selected) { filter: grayscale(.9); opacity: .45; }
 .day-cancel.closed { filter: grayscale(1); opacity: .5; }
+.meal-choice.closed:disabled, .day-cancel.closed:disabled { cursor: not-allowed; }
 
 .meal-tag {
   display: inline-flex; align-items: center; gap: 6px;
