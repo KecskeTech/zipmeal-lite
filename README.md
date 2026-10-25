@@ -7,6 +7,23 @@ webalkalmazás, backend nélkül.
 
 https://ziplite.kecske.win/
 
+### Miért irányít át a `kecsketech.github.io/zipmeal-lite` erre a domainre?
+
+Ez a GitHub Pages *canonical domain* viselkedése, nem külön kód:
+
+1. A repóban lévő `CNAME` fájl (`ziplite.kecske.win`) azt mondja a GitHub Pages-nek,
+   hogy ez a site egyedi domainen él.
+2. Amíg a `CNAME` be van állítva, a `<user>.github.io/<repo>` címen kiszolgált
+   tartalom **301-gyel** átirányít a canonical domainre (ekkor `http://`, a böngésző
+   utána a HTTPS-re vált). Így egy oldalnak nem lesz két „hivatalos” címe, a
+   keresők sem duplikálják, és a relatív útvonalak (`./app.js`) egy helyen élnek.
+3. A DNS-ben a `ziplite` CNAME `kecsketech.github.io`-ra mutat; a GitHub a Host
+   fejléc alapján a repóhoz tartozó site-ot szolgálja ki, a HTTP-kéréseket pedig
+   HTTPS-re tereli.
+
+Ha holnap a `CNAME` fájlt törölnéd, a `github.io/<repo>` cím szolgálná ki közvetlenül
+(átirányítás nélkül), a saját domain pedig megszűnne.
+
 ## Funkciók
 
 - Bejelentkezés ZipMeal-fiókkal (a jelszó kizárólag a ZipMeal szervereire megy, a
