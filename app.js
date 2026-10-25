@@ -364,8 +364,6 @@ function setActiveDiner(me) {
     fullName: me.fullName,
   };
   document.getElementById('user-name').textContent = me.nickname || me.fullName || '';
-  document.getElementById('user-group').textContent =
-    [me.institution?.name?.trim(), me.group].filter(Boolean).join(' • ');
   document.getElementById('user-avatar').textContent =
     (me.fullName || '?').split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   document.getElementById('switch-diner-btn').hidden = !state.isParent;
@@ -1172,6 +1170,26 @@ function navigateWeek(dir) {
 document.getElementById('prev-week').addEventListener('click', () => navigateWeek(-1));
 document.getElementById('next-week').addEventListener('click', () => navigateWeek(1));
 
+/* „Mai nap” gomb: visszaugrik az aktuális hétre, majd a mai (ha nincs, a
+   következő ételes) napkártyára görget. */
+async function jumpToToday() {
+  if (!state.diner) return;
+  state.stayPinned = false;
+  pinDir = 0;
+  state.autoScrolled = false;
+  await loadWeek(0);
+  const today = todayIso();
+  const cards = Array.from(DAYS_EL.querySelectorAll('.day-card'));
+  const target = cards.find((el) => el.dataset.date === today) ||
+    cards.find((el) => el.dataset.date > today) ||
+    cards[0];
+  if (!target) return;
+  state.autoScrolled = true;
+  requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
+
+document.getElementById('today-btn').addEventListener('click', jumpToToday);
+
 DAYS_EL.addEventListener('click', (e) => {
   const mealBtn = e.target.closest('.meal-choice');
   if (mealBtn && !mealBtn.disabled) {
@@ -1345,7 +1363,6 @@ window.ZipMealLite = {
     loadWeek = demoLoadWeek;
     showView('main');
     document.getElementById('user-name').textContent = 'Demó Diák';
-    document.getElementById('user-group').textContent = 'Demó Iskola • 9.A';
     return demoLoadWeek(weekOffset);
   },
 };

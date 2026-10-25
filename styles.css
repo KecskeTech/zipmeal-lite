@@ -59,10 +59,13 @@ body {
   stroke-linecap: round; stroke-linejoin: round;
 }
 .btn.nav {
-  width: 42px; height: 42px; padding: 0;
-  font-size: 1.4rem; color: var(--primary);
+  width: 58px; height: 58px; padding: 0;
+  font-size: 1.9rem; line-height: 1; color: var(--primary);
   background: var(--card); box-shadow: var(--shadow);
   display: grid; place-items: center;
+}
+@media (max-width: 480px) {
+  .btn.nav { width: 52px; height: 52px; font-size: 1.7rem; }
 }
 .btn.nav:hover { background: var(--primary-soft); }
 
@@ -89,6 +92,29 @@ body {
 .login-card h1 { margin: 6px 0 0; font-size: 1.6rem; letter-spacing: -.02em; }
 .login-card h1 span { color: var(--primary); }
 .subtitle { margin: 0 0 10px; color: var(--muted); font-size: .92rem; }
+
+/* Fő funkciók a login képernyőn. */
+.login-features {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 8px; text-align: left;
+}
+.login-features li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  background: #f8f8fe;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.feature-icon {
+  width: 20px; height: 20px; flex: none; margin-top: 1px;
+  fill: none; stroke: var(--primary); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.login-features b { display: block; font-size: .82rem; color: #2a2b40; }
+.login-features small {
+  display: block; margin-top: 2px;
+  color: var(--muted); font-size: .74rem; line-height: 1.4; font-weight: 500;
+}
 
 .login-fields { display: flex; flex-direction: column; gap: 14px; text-align: left; }
 label { display: flex; flex-direction: column; gap: 6px; font-size: .8rem; font-weight: 600; color: var(--muted); }
@@ -120,6 +146,10 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   width: 16px; height: 16px; flex: none; margin-top: 1px;
   fill: none; stroke: var(--ok); stroke-width: 2;
   stroke-linecap: round; stroke-linejoin: round;
+}
+.login-vibecoded {
+  margin: 0; padding-top: 2px;
+  color: var(--muted); font-size: .72rem; font-weight: 600;
 }
 
 /* ---------- diner (child) selector ---------- */
@@ -204,6 +234,14 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   border-color: rgba(70, 48, 235, .25);
   box-shadow: 0 4px 14px rgba(46, 34, 140, .18);
 }
+/* Keskeny kijelzőn (a „Mai nap”, „Gyermek” és „Kilépés” gombokkal együtt)
+   férjen el a fejléc egy sorban. */
+@media (max-width: 640px) {
+  .topbar-inner { gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+  .topbar .btn.small { padding: 7px 10px; }
+  .topbar .btn-icon { margin-right: 4px; }
+  .topbar .avatar { width: 38px; height: 38px; font-size: .85rem; }
+}
 
 /* ---------- offline sáv ---------- */
 .offline-banner {
@@ -214,6 +252,10 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   border-bottom: 1px solid #f0d48a;
   font-size: .8rem; font-weight: 600;
 }
+@media (max-width: 640px) {
+  /* A keskeny topbar magasságához igazítva, hogy ne maradjon rés felette. */
+  .offline-banner { top: 55px; }
+}
 .avatar {
   width: 42px; height: 42px; flex: none;
   display: grid; place-items: center;
@@ -223,7 +265,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 }
 .user-info { flex: 1; display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .user-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-group { color: var(--muted); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- week nav ---------- */
 .week-nav {

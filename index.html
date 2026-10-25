@@ -24,6 +24,29 @@
       <div class="login-logo">🍽️</div>
       <h1>ZipMeal <span>Lite</span></h1>
       <p class="subtitle">Ebédválasztás, ahogy kellene</p>
+      <ul class="login-features">
+        <li>
+          <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <path d="M12 20h.01"/>
+            <path d="M2 2l20 20"/>
+          </svg>
+          <span>
+            <b>Offline működés</b>
+            <small>A már betöltött étlap internet nélkül is elérhető.</small>
+          </span>
+        </li>
+        <li>
+          <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13 2L3 14h8l-1 8 11-13h-8l1-7z"/>
+          </svg>
+          <span>
+            <b>Gyors, egyszerű</b>
+            <small>Egy pillantás a hétre, egy kattintás a választás.</small>
+          </span>
+        </li>
+      </ul>
       <div class="login-fields">
         <label>Email
           <input type="email" id="login-email" autocomplete="email" required>
@@ -43,6 +66,7 @@
         pedig csak a saját eszközödön, a böngésző tárolójában (cookie / localStorage)
         marad meg. Ez a kliens saját szervert nem használ.</span>
       </p>
+      <p class="login-vibecoded">✨ Ez az alkalmazás vibe codeolással készült.</p>
     </form>
   </div>
 
@@ -71,8 +95,14 @@
         <span id="user-avatar" class="avatar">?</span>
         <div class="user-info">
           <span id="user-name" class="user-name"></span>
-          <span id="user-group" class="user-group"></span>
         </div>
+        <button id="today-btn" class="btn ghost small" title="Ugrás a mai napra">
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18"/>
+            <circle cx="12" cy="16" r="2"/>
+          </svg>Mai nap
+        </button>
         <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" hidden>
           <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>

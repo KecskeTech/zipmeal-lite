@@ -126,6 +126,10 @@ kivágáshoz a magyar feliratot használja) – ne írd át ASCII-ra.
   ad: ilyenkor **nem lépünk sehova**, a legutóbbi ételes hét marad (és `stayPinned`
   miatt ugyanabba az irányba a további kattintások sem próbálkoznak újra).
 - `weekLoadSeq` védi a versenyhelyzetet (közben másik hétre lépés).
+- A felső sáv **„Mai nap”** gombja (`jumpToToday()`): `loadWeek(0)`, majd a mai
+  napkártyára görget (ha nincs mai menü, a következő ételes napra, végső esetben
+  az első kártyára). Ilyenkor `state.autoScrolled = false`, hogy a `focusToday()`
+  is a mai napra álljon.
 
 ### Ismert csapdák (ezeket már egyszer elrontottuk)
 
@@ -151,7 +155,10 @@ weekRange, busy, offline, autoScrolled, demo`.
 - Nézetek: `showView('login' | 'diner' | 'main')`.
 - A `.day-card` szándékosan **határozottabb** hátterű/árnyékú, mint a `.week-group`
   (ami áttetsző) – így a kártyák elválnak az oldal háttérétől. Ne „világosítsd” vissza.
-- A login képernyő alján `.login-disclaimer` (adatkezelési figyelmeztetés).
+- A topbar csak a felhasználónevet mutatja; az iskola neve és az osztály
+  szándékosan **nem** jelenik meg ott (a gyermekválasztó listában igen).
+- A login képernyőn `.login-features` (Offline működés, Gyors, egyszerű), alján
+  `.login-disclaimer` (adatkezelési figyelmeztetés) és `.login-vibecoded` jelzés.
 - Toast: `setStatus()`; a gombok letiltása `state.busy` és a határidők alapján történik.
 
 ## Demó / tesztelés
@@ -173,6 +180,5 @@ weekRange, busy, offline, autoScrolled, demo`.
 
 ## Deploy
 
-`main` ágra push → GitHub Actions / Pages automatikusan publikál. A `CNAME` miatt a
-saját domain szolgálja ki ugyanazt a tartalmat (lásd az issue-ban/README-ben a
-domain-magyarázatot).
+`main` ágra push → GitHub Actions / Pages automatikusan publikál. A `CNAME` fájlban
+beállított saját domain (`ziplite.kecske.win`) szolgálja ki ugyanazt a tartalmat.

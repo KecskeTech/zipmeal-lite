@@ -3,26 +3,11 @@
 Nem hivatalos, mobilbarát webes ebédválasztó a ZipMeal API-hoz. Egyetlen statikus
 webalkalmazás, backend nélkül.
 
+Az alkalmazás ✨ **vibe codeolással** készült – az ötlet és az utóellenőrzés emberi.
+
 ## Élő oldal
 
 https://ziplite.kecske.win/
-
-### Miért irányít át a `kecsketech.github.io/zipmeal-lite` erre a domainre?
-
-Ez a GitHub Pages *canonical domain* viselkedése, nem külön kód:
-
-1. A repóban lévő `CNAME` fájl (`ziplite.kecske.win`) azt mondja a GitHub Pages-nek,
-   hogy ez a site egyedi domainen él.
-2. Amíg a `CNAME` be van állítva, a `<user>.github.io/<repo>` címen kiszolgált
-   tartalom **301-gyel** átirányít a canonical domainre (ekkor `http://`, a böngésző
-   utána a HTTPS-re vált). Így egy oldalnak nem lesz két „hivatalos” címe, a
-   keresők sem duplikálják, és a relatív útvonalak (`./app.js`) egy helyen élnek.
-3. A DNS-ben a `ziplite` CNAME `kecsketech.github.io`-ra mutat; a GitHub a Host
-   fejléc alapján a repóhoz tartozó site-ot szolgálja ki, a HTTP-kéréseket pedig
-   HTTPS-re tereli.
-
-Ha holnap a `CNAME` fájlt törölnéd, a `github.io/<repo>` cím szolgálná ki közvetlenül
-(átirányítás nélkül), a saját domain pedig megszűnne.
 
 ## Funkciók
 
@@ -32,6 +17,8 @@ Ha holnap a `CNAME` fájlt törölnéd, a `github.io/<repo>` cím szolgálná ki
 - Havi étlap lekérdezése, **egy hétre bontva**: a felső nyilakkal hétre előre/hátra
   lehet lépni (a hónaphatáron átnyúló heteket is kezeli), hét sorszámmal és
   dátumtartománnyal
+- **„Mai nap” gomb** a felső sávban: bármelyik hétnél jársz, visszaugrik az aktuális
+  hétre, és a mai (ha nincs mai menü, a következő ételes) napkártyára görget
 - **Az étel nélküli (szüneti) heteket a nyilak automatikusan átugorják**: ha egy
   héten egyáltalán nincs menü (őszi/téli szünet), a navigáció a következő (illetve
   visszafelé az előző) étellel rendelkező hétre lép. Ha abban az irányban már nincs
@@ -97,6 +84,12 @@ python -m http.server -d . 8000
 ```
 
 Utána: http://localhost:8000
+
+## Vibe coding
+
+Ez a projekt ✨ vibe codeolással készült: a funkciók nagy része AI-asszisztens
+segítségével, gyors iterációkkal született, emberi ötletadás és utóellenőrzés
+mellett. A kód ennek megfelelően egyszerű, olvasható és könnyen módosítható.
 
 ## Licenc
 
