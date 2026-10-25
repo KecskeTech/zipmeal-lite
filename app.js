@@ -158,6 +158,8 @@ const state = {
   busy: false,
   offline: false, // offline mód: becsült adatok, módosítás tiltva
   autoScrolled: false, // már az aznapi ebédre ugrottunk?
+  lastMealWeek: null, // az utoljára megjelenített, étellel rendelkező hét offsetje
+  stayPinned: false,  // üres időszak: az ételes héten maradunk (nem lépünk tovább)
 };
 
 /* month key: YYYYMM for a Date shifted by the given month offset */
@@ -198,18 +200,50 @@ function monthsForWeek(range) {
   return out;
 }
 
-/* orderDate/mealDate -> 'YYYYMMDD' (UTC dátumrész, API kulcs – a szerver ezt várja,
-   az eredeti app is ezt küldi kezdete/vege mezőként) */
-function ymd(iso) { return iso.slice(0, 10).replace(/-/g, ''); }
+/* A mealDate / orderDate a magyar éjfélt jelöli, pl. "2026-11-01T23:00:00.000Z"
+   = november 2. 00:00 magyar idő. A napot ezért a KÉSZÜLÉK HELYI idejéből kell
+   venni (new Date(...) helyi napja) – pontosan így számol az eredeti zipmeal
+   kliens is (`new Date(o).toDateString()`).
 
-/* A mealDate mindig T23:00:00Z = magyar idő KÖVETKEZŐ nap 00:00.
-   Tehát a tényleges (HU) étkezés napja = UTC dátumrész + 1 nap.
-   Kijelzéshez ezt használjuk, API-híváshoz az UTC kulcsot (ymd). */
-function displayIso(key) {
-  const d = new Date(key.slice(0, 4) + '-' + key.slice(4, 6) + '-' + key.slice(6, 8) + 'T23:00:00Z');
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
+   FONTOS: ne a UTC dátumrészhez adjunk +1 napot! Az csak a téli időszámítás
+   alatt (UTC+1) esik egybe a helyi nappal; nyáron (CEST, UTC+2) 01:00-re
+   csúszna, és a hétfői/vasárnapi ételek rossz hétre kerülnének.
+
+   Kétféle kulcs van:
+   - `ymd(iso)`    → "YYYYMMDD", a szerver által várt nap (kezdete/vege,
+                     choose-meal), azaz az ISO string UTC dátumrésze;
+   - `dayIso(iso)` → "YYYY-MM-DD", a megjelenített (helyi) nap. */
+function ymd(iso) { return String(iso).slice(0, 10).replace(/-/g, ''); }
+
+function localIsoFromDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
 }
+
+/* API-dátum → megjelenített helyi nap ("YYYY-MM-DD").
+   A zipmeal a helyi napot 23:00-kor jelöli (pl. "...T23:00:00.000Z"), így a
+   helyi nap egyszerűen leolvasható. Biztonsági korrekció: ha a szerver mégis
+   ÉJFÉLKORI (UTC 00:00) értéket küldene, a helyi idő szerint előző nap 01:00-re
+   esne – ilyenkor a következő naptól számolunk, mert az étkezés a nap elejére
+   (reggeli/ebéd) vonatkozik, nem az előző estére. */
+function dayIso(value) {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    const k = ymd(value);
+    return k.slice(0, 4) + '-' + k.slice(4, 6) + '-' + k.slice(6, 8);
+  }
+  const local = new Date(d);
+  // Csak a valódi UTC-éjfél (00:00Z) esetén tolunk. A szokásos "…T23:00:00Z"
+  // értékeket NEM: azok helyi idő szerint lehetnek 00:00-kor (télen) vagy
+  // 01:00-kor (nyáron), és mindkettő a helyes napot jelöli.
+  const utcMidnight = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 &&
+    d.getUTCSeconds() === 0 && d.getUTCMilliseconds() === 0;
+  if (utcMidnight) local.setDate(local.getDate() + 1);
+  return localIsoFromDate(local);
+}
+
+/* Egy menü-/rendelés-elem helyi napja kulcsként ("YYYYMMDD"). */
+function dayKey(value) { return dayIso(value).replace(/-/g, ''); }
 
 function fmtDate(iso) {
   const d = new Date(iso.slice(0, 10) + 'T12:00:00Z');
@@ -373,13 +407,15 @@ function unwrap(d) {
     ? d.result : d;
 }
 
-/* Az adott (orders|ordersNext) blokk tartalmazza-e a target (YYYYMM) hónapot */
+/* Az adott (orders|ordersNext) blokk tartalmazza-e a target (YYYYMM) hónapot.
+   Itt a HELYI hónapot kell nézni (a mealDate a magyar éjfél), különben a
+   hónap utolsó vasárnapjának ételei a következő hónapra csúsznának. */
 function monthHasData(m, target) {
   if (!m || typeof m !== 'object') return false;
   const menu = Array.isArray(m.menu) ? m.menu : [];
   const orders = Array.isArray(m.orders) ? m.orders : [];
-  return menu.some((x) => ymd(x?.mealDate || '').slice(0, 6) === target) ||
-    orders.some((x) => ymd(x?.orderDate || x?.menuMeal?.mealDate || '').slice(0, 6) === target);
+  return menu.some((x) => dayIso(x?.mealDate || '').slice(0, 7).replace('-', '') === target) ||
+    orders.some((x) => dayIso(x?.orderDate || x?.menuMeal?.mealDate || '').slice(0, 7).replace('-', '') === target);
 }
 
 /* A szerver a "orders" blokkba a startMonth+advance hónapot adja, az "ordersNext"-be
@@ -494,17 +530,19 @@ function dayGroups(menusByGroup, ordersByGroup) {
     (menusByGroup[key]?.length || 0) > 0 || (ordersByGroup[key]?.length || 0) > 0);
 }
 
-/* adott dátumhoz (YYYYMMDD) összeállítja a nap adatait étkezésenként.
-   A `groups` az adott napra létező étkezések [{key, label, menus, order}]:
-   a `menus` a választható menük (pl. A és B ebéd), az `order` pedig az adott
-   étkezéshez tartozó rendelés (a napon tehát reggelihez és ebédhez külön
-   rendelés lehet). A nap-szintű `order` a lemondáshoz az ebéd rendelése. */
+/* adott naphoz összeállítja a nap adatait étkezésenként.
+   A `dateKey` a HELYI nap kulcsa ("YYYYMMDD", lásd dayKey()), az `iso` pedig
+   ugyanaz "YYYY-MM-DD" alakban. A `groups` az adott napra létező étkezések
+   [{key, label, menus, order}]: a `menus` a választható menük (pl. A és B
+   ebéd), az `order` pedig az adott étkezéshez tartozó rendelés (a napon tehát
+   reggelihez és ebédhez külön rendelés lehet). A nap-szintű `order` a
+   lemondáshoz az ebéd rendelése. */
 function dayInfo(dateKey) {
   const resp = state.data;
-  const iso = displayIso(dateKey); // HU nap a kijelzéshez
-  const menu = (resp?.menu || []).filter((m) => ymd(m.mealDate) === dateKey);
+  const iso = dateKey.slice(0, 4) + '-' + dateKey.slice(4, 6) + '-' + dateKey.slice(6, 8);
+  const menu = (resp?.menu || []).filter((m) => dayKey(m.mealDate) === dateKey);
   const orders = (resp?.orders || [])
-    .filter((o) => ymd(o.orderDate || o.menuMeal?.mealDate) === dateKey);
+    .filter((o) => dayKey(o.orderDate || o.menuMeal?.mealDate) === dateKey);
 
   const menusByGroup = {};
   for (const m of menu) {
@@ -547,7 +585,7 @@ function dayInfo(dateKey) {
 function collectDays() {
   const range = state.weekRange;
   if (!range) return [];
-  const keys = new Set((state.data?.menu || []).map((m) => ymd(m.mealDate)));
+  const keys = new Set((state.data?.menu || []).map((m) => dayKey(m.mealDate)));
   return [...keys].sort().map((k) => dayInfo(k))
     .filter((d) => d.iso >= range.monday && d.iso <= range.sunday);
 }
@@ -555,18 +593,27 @@ function collectDays() {
 /* ---------- mutations ---------- */
 /* Az `o` a kiválasztott étkezés rendelése (reggeli / ebéd / vacsora),
    a `menuLetter` pedig a választási betű (A/B/…; üres = egyetlen menü). */
+/* Az API a `kezdete`/`vege` mezőkben a szerver napját várja (YYYYMMDD) – ez a
+   rendelés orderDate/mealDate ISO-stringjének UTC dátumrésze (ymd), NEM a
+   megjelenített helyi nap. */
+function apiDayKey(day, o) {
+  const iso = o?.orderDate || o?.menuMeal?.mealDate;
+  return iso ? ymd(iso) : day.dateKey;
+}
+
 async function chooseMeal(day, o, menuLetter) {
   if (!o) throw new Error('Nincs rendelés erre a napra.');
   if (state.offline) throw new Error('Offline módban nem módosítható.');
   if (isDeadlinePassed(o.selectMenuDeadline)) throw new Error('A választási határidő lejárt.');
+  const dayKeyForApi = apiDayKey(day, o);
   const body = {
     cardId: state.diner.cardId,
     orderId: o.externalOrderId,
     organOrder: {
       fejId: o.externalOrderTypeId,
       etkezesTipusId: o.externalMealTypeId,
-      kezdete: day.dateKey,
-      vege: day.dateKey,
+      kezdete: dayKeyForApi,
+      vege: dayKeyForApi,
       cancelDate: o.cancelDate,
     },
     version: o.orderVersion,
@@ -581,9 +628,10 @@ async function cancelDay(day) {
   if (isDeadlinePassed(day.order?.cancelDeadline) || day.order?.consumedDate) {
     throw new Error('A lemondási határidő lejárt.');
   }
+  const key = apiDayKey(day, day.order);
   await api('/users/cancel-meals', {
     method: 'POST',
-    body: { cardId: state.diner.cardId, organOrder: { kezdete: day.dateKey, vege: day.dateKey } },
+    body: { cardId: state.diner.cardId, organOrder: { kezdete: key, vege: key } },
   });
 }
 
@@ -592,9 +640,10 @@ async function uncancelDay(day) {
   if (isDeadlinePassed(day.order?.cancelDeadline) || day.order?.consumedDate) {
     throw new Error('A lemondási határidő lejárt.');
   }
+  const key = apiDayKey(day, day.order);
   await api('/users/add-meal', {
     method: 'POST',
-    body: { cardId: state.diner.cardId, organOrder: { kezdete: day.dateKey, vege: day.dateKey } },
+    body: { cardId: state.diner.cardId, organOrder: { kezdete: key, vege: key } },
   });
 }
 
@@ -860,13 +909,14 @@ function mergeWeekData(payloads) {
       // a mealType -> étkezés leképezés hónaponként/ordersNextenként eltérhet
       Object.assign(mealDict, chunk.mealDict || {});
       for (const m of chunk.menu || []) {
-        const key = ymd(m.mealDate) + '|' + m.mealType;
+        // a menü azonosítója (mező, étkezés) az igazi egyediség; a nap a helyi nap
+        const key = (m.id || dayKey(m.mealDate)) + '|' + m.mealType;
         if (seenMenu.has(key)) continue;
         seenMenu.add(key);
         menu.push(m);
       }
       for (const o of chunk.orders || []) {
-        const key = ymd(o.orderDate || o.menuMeal?.mealDate) + '|' +
+        const key = dayKey(o.orderDate || o.menuMeal?.mealDate) + '|' +
           (o.externalOrderId ?? o.orderVersion ?? '');
         if (seenOrder.has(key)) continue;
         seenOrder.add(key);
@@ -883,7 +933,16 @@ function mergeWeekData(payloads) {
 function weekHasMeals(range, payloads) {
   const data = mergeWeekData(payloads);
   return (data.menu || []).some((m) => {
-    const iso = displayIso(ymd(m.mealDate));
+    const iso = dayIso(m.mealDate); // helyi nap
+    return iso >= range.monday && iso <= range.sunday;
+  });
+}
+
+/* Egy hétre vonatkozó adatokból megmondja, van-e egyáltalán étel. Ugyanaz,
+   mint a weekHasMeals, csak már összefűzött (keresett) adatokból. */
+function dataHasMeals(range, data) {
+  return (data?.menu || []).some((m) => {
+    const iso = dayIso(m.mealDate);
     return iso >= range.monday && iso <= range.sunday;
   });
 }
@@ -898,37 +957,44 @@ function cachedPayloadForMonth(key) {
 /* Merre és meddig keressük a nem üres hetet (kb. egy év, előre/hátra). */
 const WEEK_SKIP_LIMIT = 52;
 
+/* Egy hét payloadjai (memória/API, hálózati hiba esetén localStorage). */
+async function payloadsForWeek(range, force = false) {
+  const payloads = [];
+  for (const key of monthsForWeek(range)) {
+    try {
+      payloads.push(await ensureMonthPayload(key, force));
+    } catch (_) {
+      const cached = cachedPayloadForMonth(key);
+      if (cached) payloads.push(cached);
+    }
+  }
+  return payloads;
+}
+
 /* A megadott héttől a `dir` (-1 vagy +1) irányban az első olyan hét
-   offsetje, amelyen van étel. Ha nincs ilyen (pl. nyár közepe), akkor az
-   utolsó vizsgált hét jön vissza, hogy a felhasználó lássa, ott nincs menü. */
+   offsetje, amelyen van étel. Ha nincs ilyen (pl. nyár közepe), `null`-t ad,
+   mert ilyenkor a hívó megtartja a legutolsó ételes hetet (nem ugrunk
+   értelmetlenül egy évvel odébb). */
 async function findMealWeek(startOffset, dir, force = false) {
-  let lastChecked = startOffset;
   for (let step = 1; step <= WEEK_SKIP_LIMIT; step++) {
     const offset = startOffset + dir * step;
     const range = weekRangeForOffset(offset);
-    const payloads = [];
-    for (const key of monthsForWeek(range)) {
-      try {
-        payloads.push(await ensureMonthPayload(key, force));
-      } catch (_) {
-        // hálózati hiba: a localStorage-os tartalékot használjuk
-        const cached = cachedPayloadForMonth(key);
-        if (cached) payloads.push(cached);
-      }
-    }
-    lastChecked = offset;
-    // ha egyetlen hónap adatát sem sikerült megszerezni, ne ugorjunk tovább
-    if (!payloads.length) return offset;
+    const payloads = await payloadsForWeek(range, force);
+    // hálózati hiba vagy üres válasz: ne ugorjunk tovább
+    if (!payloads.length) return null;
     if (weekHasMeals(range, payloads)) return offset;
   }
-  return lastChecked;
+  return null;
 }
 
 let weekLoadSeq = 0;
 
-async function loadWeek(offset, force = false, { skipEmpty = false } = {}) {
+/* `dir`: a navigáció iránya (-1 = visszafelé, +1 = előre). Csak az üres hét
+   átugrásához kell; ha nincs megadva, a korábbi weekOffsetből számoljuk. */
+async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0 } = {}) {
   const seq = ++weekLoadSeq;
-  const prevOffset = state.weekOffset; // a navigáció irányához (üres hét átugrása)
+  const prevOffset = state.weekOffset; // az üres hét átugrásának irányához
+  const navDir = dir || (offset >= prevOffset ? 1 : -1);
   state.weekOffset = offset;
   state.weekRange = weekRangeForOffset(offset);
   state.autoScrolled = state.autoScrolled && offset === 0;
@@ -962,20 +1028,37 @@ async function loadWeek(offset, force = false, { skipEmpty = false } = {}) {
 
   const data = mergeWeekData(payloads);
 
-  // Nyilakkal való navigációnál az üres (szünet) heteket átugorjuk.
-  if (skipEmpty && !data.menu.length) {
-    const dir = offset >= prevOffset ? 1 : -1;
-    const target = await findMealWeek(offset, dir, force);
+  // Nyilakkal való navigációnál az üres (szünet) heteket teljesen átugorjuk.
+  // Itt a ténylegesen megjelenítendő adatból döntünk (dataHasMeals), mert a
+  // hónap-payload más hónapokat is tartalmaz, amiből félre lehetne vezetni.
+  if (skipEmpty && !dataHasMeals(state.weekRange, data)) {
+    const target = await findMealWeek(offset, navDir, force);
     if (seq !== weekLoadSeq) return;
-    if (target !== offset) {
-      // a továbblépés már nem ugrik, hogy ne lehessen végtelen ciklusba futni
-      await loadWeek(target, force);
+    if (target !== null && target !== offset) {
+      state.stayPinned = false; // ételes hétre érkeztünk
+      // a továbblépés már nem ugrik (nincs skipEmpty), így nincs végtelen ciklus
+      await loadWeek(target, force, { dir: navDir });
+      return;
+    }
+    // Nincs a közelben ételes hét ebben az irányban (pl. a nyár elején).
+    // Ilyenkor nem lépünk sehova: az ételes hét marad a képernyőn, és a
+    // további kattintásokra sem próbálkozunk újra (stayPinned), amíg a
+    // felhasználó az ellenkező irányba nem indul.
+    state.stayPinned = true;
+    let keep = state.lastMealWeek;
+    if (keep === null || keep === undefined || keep === offset) {
+      keep = (await findMealWeek(0, 1, force)) ?? 0; // a mai héttől előre az első ételes
+      if (seq !== weekLoadSeq) return;
+    }
+    if (keep !== offset) {
+      await loadWeek(keep, force, { dir: navDir });
       return;
     }
   }
 
   state.data = data;
   state.dataNext = null;
+  if (dataHasMeals(state.weekRange, data)) state.lastMealWeek = offset;
   renderDays();
   setStatus(lastErr ? 'Figyelem: ehhez a hétre csak részleges adat érhető el.' : '');
 }
@@ -1072,8 +1155,22 @@ DINERS_EL.addEventListener('click', async (e) => {
 
 // A nyilakkal lépkedve az étel nélküli (szünet) heteket átugorjuk, hogy
 // ne kelljen üres étlapokon keresztül görgetni.
-document.getElementById('prev-week').addEventListener('click', () => loadWeek(state.weekOffset - 1, false, { skipEmpty: true }));
-document.getElementById('next-week').addEventListener('click', () => loadWeek(state.weekOffset + 1, false, { skipEmpty: true }));
+/* Ha egy üres időszakban "megálltunk" az ételes héten, akkor a további
+   kattintások ugyanabba az irányba nem csinálnak semmit; az ellenkező
+   irányba indulva viszont újra keresünk ételes hetet. */
+let pinDir = 0;
+
+function navigateWeek(dir) {
+  if (state.stayPinned) {
+    if (dir === pinDir) return; // ugyanabba az irányba már nincs mit tenni
+    state.stayPinned = false;
+  }
+  pinDir = dir;
+  loadWeek(state.weekOffset + dir, false, { skipEmpty: true, dir });
+}
+
+document.getElementById('prev-week').addEventListener('click', () => navigateWeek(-1));
+document.getElementById('next-week').addEventListener('click', () => navigateWeek(1));
 
 DAYS_EL.addEventListener('click', (e) => {
   const mealBtn = e.target.closest('.meal-choice');
@@ -1131,14 +1228,16 @@ function demoWeekRange(offset, withMeals) {
   const deadline = new Date(Date.now() + 86400000).toISOString();
   let n = 0;
   while (d <= end) {
+    // Fontos: a `d` a ciklus végén továbblép, ezért a napot ELŐRE rögzítjük,
+    // különben minden menüelem az utolsó nap dátumát kapná meg.
+    const day = new Date(d);
     // hétvégén nincs menü
-    if (d.getDay() !== 0 && d.getDay() !== 6) {
-      const key = localIso(d);
-      // Az API a magyar éjfélt T23:00:00Z-ként küldi (előző nap 23:00 UTC),
-      // ezért a mealDate az előző napot tartalmazza – a demó is így utánozza.
-      const utcKey = localIso(new Date(d.getTime() - 86400000));
-      const mealDate = utcKey + 'T23:00:00Z';
-      const orderDate = utcKey + 'T23:00:00.000Z';
+    if (day.getDay() !== 0 && day.getDay() !== 6) {
+      const key = localIso(day);
+      // A valós API ugyanazt a napot jelöli 23:00-kor (a dayIso() a helyi
+      // napot olvassa le belőle), ezért a demó is így adja: "2026-11-02T23:00".
+      const mealDate = key + 'T23:00:00.000Z';
+      const orderDate = mealDate;
       for (const type of types) {
         const group = mealGroupOf(type);
         const variant = mealVariant(type);
@@ -1214,12 +1313,21 @@ window.ZipMealLite = {
   state,
   // belső segédfüggvények (teszteléshez / hibakereséshez)
   debug: {
-    displayIso: (k) => displayIso(k),
+    state,
+    dayIso: (v) => dayIso(v),
+    dayKey: (v) => dayKey(v),
     ymd: (i) => ymd(i),
     dayInfo: (k) => dayInfo(k),
     collectDays: () => collectDays(),
-    // a kijelzett nap ellenőrzése: a menu/order UTC kulcsa + 1 nap
-    dayKeyFromMenu: (m) => displayIso(ymd(m.mealDate)),
+    // a kijelzett nap ellenőrzése: a menu/order helyi napja
+    dayKeyFromMenu: (m) => dayKey(m.mealDate),
+    dataHasMeals: (range, data) => dataHasMeals(range, data),
+    weekHasMeals: (range, payloads) => weekHasMeals(range, payloads),
+    loadWeek: (off, force, opts) => loadWeek(off, force, opts),
+    findMealWeek: (off, dir, force) => findMealWeek(off, dir, force),
+    payloadsForWeek: (range, force) => payloadsForWeek(range, force),
+    weekRangeForOffset: (off) => weekRangeForOffset(off),
+    monthsForWeek: (range) => monthsForWeek(range),
   },
   clearDemo() {
     state.data = null;

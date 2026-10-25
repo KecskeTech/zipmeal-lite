@@ -75,12 +75,22 @@ Egyetlen statikus PWA (nincs build, nincs csomagkezelő): `index.html` + `styles
 
 ### Dátum-csapda (fontos!)
 
-`mealDate` / `orderDate` értéke `…T23:00:00.000Z`, ami **magyar idő szerint a
-következő nap 00:00**. Ezért:
-- az API kulcs (`kezdete`/`vege`, `YYYYMMDD`) = az ISO string első 10 karaktere
-  (`ymd()`), és a kijelzett (magyar) nap ennél **+1 nap** (`displayIso()`).
-- `dayInfo()` a **kulcsot** kapja (pl. `"20261019"`), az `iso` mező a magyar nap.
-- A `menu`/`orders` szűrése mindig a kulccsal történik.
+`mealDate` / `orderDate` a **helyi (magyar) napot** 23:00-kor jelöli, pl.
+`"2026-11-01T23:00:00.000Z"` = november 2. Helyi nap = `new Date(iso)` helyi
+napja (így számol az eredeti zipmeal kliens is, `new Date(o).toDateString()`).
+
+**Ne** a UTC dátumrészhez adjunk +1 napot: az csak télen (UTC+1) esik egybe a
+helyi nappal, nyáron (CEST, UTC+2) 01:00-re csúszik → a hétfői/vasárnapi ételek
+rossz hétre kerülnek, és a szüneti hetek átugrása elromlik.
+
+Kétféle kulcs:
+- `ymd(iso)` → `"YYYYMMDD"`, a **szerver** napja (choose-meal / cancel-meals
+  `kezdete`/`vege`): az ISO UTC dátumrésze.
+- `dayIso(iso)` / `dayKey(iso)` → a **megjelenített** helyi nap (`YYYY-MM-DD` /
+  `YYYYMMDD`). `dayInfo()`, `collectDays()`, a hét-ellenőrzés (`dataHasMeals`,
+  `weekHasMeals`) és a napkártyák kulcsa mindez.
+- `apiDayKey(day, order)` adja a `choose-meal`/`cancel-meals`/`add-meal` body-ba
+  a napot (az order `orderDate`/`menuMeal.mealDate` UTC kulcsa).
 
 ### Ékezetes stringek
 
@@ -106,12 +116,25 @@ kivágáshoz a magyar feliratot használja) – ne írd át ASCII-ra.
 ## Heti navigáció
 
 - `state.weekOffset` (0 = aktuális hét), `weekRangeForOffset()` adja a hétfő/vasárnapot.
-- `loadWeek(offset, force, { skipEmpty })`: hónapok lekérése (`ensureMonthPayload`),
-  összefűzés (`mergeWeekData`), majd ha `skipEmpty` és nincs menü →
-  `findMealWeek(offset, dir)` megkeresi a következő nem üres hetet (max 52 hét).
-- A nyilak (`#prev-week`, `#next-week`) `skipEmpty: true`-val hívják; a többi hívás
-  (bejelentkezés, módosítás utáni frissítés, online visszatérés) nem ugrik.
+- `loadWeek(offset, force, { skipEmpty, dir })`: hónapok lekérése
+  (`ensureMonthPayload`), összefűzés (`mergeWeekData`), majd ha `skipEmpty` és a
+  **megjelenítendő adatban** nincs étel (`dataHasMeals`) → `findMealWeek(offset, dir)`
+  megkeresi az első ételes hetet (max 52 hét).
+- A nyilak a `navigateWeek(dir)`-en át hívják (dir = -1 / +1, `skipEmpty: true`);
+  a többi hívás (bejelentkezés, módosítás utáni frissítés, online visszatérés) nem ugrik.
+- Ha a keresett irányban nincs ételes hét (pl. a nyár elején), `findMealWeek` `null`-t
+  ad: ilyenkor **nem lépünk sehova**, a legutóbbi ételes hét marad (és `stayPinned`
+  miatt ugyanabba az irányba a további kattintások sem próbálkoznak újra).
 - `weekLoadSeq` védi a versenyhelyzetet (közben másik hétre lépés).
+
+### Ismert csapdák (ezeket már egyszer elrontottuk)
+
+- A napokat mindig `dayIso`/`dayKey`-jel számold (helyi nap), **ne** `ymd` + 1 nappal.
+- A hét „üres-e” döntést a megjelenítendő (`mergeWeekData`) adatból hozd
+  (`dataHasMeals`), ne egy hónap-payloadból (az más hónapokat is tartalmaz).
+- Az átugrás iránya ne a `state.weekOffset`-ból legyen visszafejtve (az már átíródott),
+  hanem paraméterként jöjjön (`dir`).
+- A demó-ciklusban a dátumot (`new Date(d)`) rögzítsd, mert a `d` a ciklus végén továbblép.
 
 ## Állapot & cache
 

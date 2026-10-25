@@ -34,7 +34,8 @@ Ha holnap a `CNAME` fájlt törölnéd, a `github.io/<repo>` cím szolgálná ki
   dátumtartománnyal
 - **Az étel nélküli (szüneti) heteket a nyilak automatikusan átugorják**: ha egy
   héten egyáltalán nincs menü (őszi/téli szünet), a navigáció a következő (illetve
-  visszafelé az előző) étellel rendelkező hétre lép
+  visszafelé az előző) étellel rendelkező hétre lép. Ha abban az irányban már nincs
+  több ételes hét (pl. a nyár elején), a kép az ételes héten marad.
 - **Reggeli / Ebéd / Vacsora**: az orders válasz `mealDict` mezője alapján a napkártya
   az összes olyan étkezést megjeleníti, amelyre az adott napon **tényleg van menü**.
   Ha nincs reggeli (vagy vacsora), az a blokk egyszerűen nem jelenik meg – ilyenkor
