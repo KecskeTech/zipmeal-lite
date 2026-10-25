@@ -9,10 +9,19 @@ https://ziplite.kecske.win/
 
 ## Funkciók
 
-- Bejelentkezés ZipMeal-fiókkal
+- Bejelentkezés ZipMeal-fiókkal (a jelszó kizárólag a ZipMeal szervereire megy, a
+  bejelentkezés csak a saját eszközön, a böngésző tárolójában marad meg – ezt a
+  login képernyő alján egy rövid figyelmeztetés is jelzi)
 - Havi étlap lekérdezése, **egy hétre bontva**: a felső nyilakkal hétre előre/hátra
   lehet lépni (a hónaphatáron átnyúló heteket is kezeli), hét sorszámmal és
   dátumtartománnyal
+- **Az étel nélküli (szüneti) heteket a nyilak automatikusan átugorják**: ha egy
+  héten egyáltalán nincs menü (őszi/téli szünet), a navigáció a következő (illetve
+  visszafelé az előző) étellel rendelkező hétre lép
+- **Reggeli / Ebéd / Vacsora**: az orders válasz `mealDict` mezője alapján a napkártya
+  az összes olyan étkezést megjeleníti, amelyre az adott napon **tényleg van menü**.
+  Ha nincs reggeli (vagy vacsora), az a blokk egyszerűen nem jelenik meg – ilyenkor
+  csak az ebéd látszik, pontosan úgy, ahogy korábban
 - Az étel kiválasztása, lemondása és a lemondás visszavonása
 - A **választási (`selectMenuDeadline`) és lemondási (`cancelDeadline`) határidők**
   külön megjelenítése; a lejárt határidő után az érintett gombok szürkék / letiltottak
@@ -29,6 +38,36 @@ alkalmazás menti el a `localStorage`-ba étkezőnként és hónaponként. Inter
 a korábban betöltött hetek étlapja és a választások láthatók; a választó- és
 lemondásgombok ilyenkor le vannak tiltva, és egy figyelmeztető sáv jelzi az offline
 állapotot.
+
+## Étkezés-típusok (reggeli / vacsora)
+
+Az orders válasz `mealDict` mezője képezi le a `mealType`-ot étkezésre:
+
+```json
+{ "Reggeli": "breakfast", "Ebéd": "lunch", "Ebéd A": "lunch",
+  "Ebéd B": "lunch", "Vacsora": "dinner" }
+```
+
+A napkártyán megjelenő blokkok sorrendje: **Reggeli → Ebéd → Vacsora**. Egy blokk
+csak akkor jelenik meg, ha az adott napra van hozzá menü (vagy rendelés) az orders
+válaszban, így a reggeli/vacsora nélküli napokon a kártya változatlanul csak az
+ebédet mutatja. A `menu` mezőből csak a választási betűt (`mealType` → `"Ebéd A"` ⇒
+`"A"`) küldjük a `choose-meal` kérésben; a reggeli/vacsora esetén ez üres, és a kód
+ilyenkor `"A"`-t küld.
+
+## Fejlesztői demó (API és fiók nélkül)
+
+A böngésző konzoljából hamis étlap tölthető be, hogy a reggeli/vacsora megjelenítés
+és a szüneti hetek átugrása kipróbálható legyen:
+
+```js
+ZipMealLite.demo({ breakfast: true, dinner: true }) // van reggeli és vacsora is
+ZipMealLite.demo({ breakfast: false, dinner: false }) // csak ebéd
+ZipMealLite.clearDemo() // vissza a login képernyőre
+```
+
+A demó minden harmadik hetet üresnek jelöl, így a nyilakkal való átugrás is
+kipróbálható.
 
 ## Helyi futtatás
 

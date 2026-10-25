@@ -59,6 +59,8 @@ function monthCacheKey(cardId, target) { return 'month_' + cardId + '_' + target
 function saveMonthCache(target) {
   if (!state.diner?.cardId || !state.data) return;
   cache.set(monthCacheKey(state.diner.cardId, target), {
+    // A mealDict is kell az offline módhoz, különben a reggeli/vacsora
+    // étkezés-típus nem azonosítható a cache-elt menüből.
     data: state.data,
     dataNext: state.dataNext || null,
   });
@@ -444,19 +446,95 @@ async function fetchMonth(offset) {
   }
 }
 
-/* adott dátumhoz (YYYYMMDD) összeállítja a nap adatait:
-   menuA, menuB (menü elemek), order (ha van rendelés az adott napra) */
+/* ---------- étkezés-típusok (reggeli / ebéd / vacsora) ----------
+   Az API `mealDict` mezője a mealType -> étkezés kulcs leképezése, pl.
+   "Reggeli" -> "breakfast", "Ebéd A" -> "lunch", "Vacsora" -> "dinner".
+   Ha a válaszban van reggeli vagy vacsora, akkor ezekre is lehet választani. */
+
+/* Az étkezés-csoportok megjelenítési sorrendje és felirata. */
+const MEAL_GROUPS = [
+  { key: 'breakfast', label: 'Reggeli' },
+  { key: 'lunch', label: 'Ebéd' },
+  { key: 'dinner', label: 'Vacsora' },
+];
+const MEAL_ORDER = MEAL_GROUPS.map((g) => g.key);
+
+function mealGroupOf(mealType) {
+  const dict = state.data?.mealDict;
+  const mapped = mealType ? dict?.[mealType] : null;
+  if (mapped) return mapped;
+  // tartalék: a mealDict hiányában a magyar étkezésnév kezdete alapján
+  return /^\s*reggeli/i.test(mealType || '') ? 'breakfast'
+    : /^\s*vacsora/i.test(mealType || '') ? 'dinner'
+      : 'lunch';
+}
+
+/* A menüelem "másodlagos" jelölése: "Ebéd A" -> "A", "Reggeli" -> "".
+   A take-meal body-ba a választási betű (A/B/...) megy (implicit A, ha nincs). */
+function mealVariant(mealType) {
+  const type = String(mealType || '').trim();
+  const group = mealGroupOf(type);
+  const pretty = MEAL_GROUPS.find((g) => g.key === group)?.label || 'Ebéd';
+  if (type === pretty) return '';
+  return type.startsWith(pretty) ? type.slice(pretty.length).trim() : '';
+}
+
+/* Az étkezés teljes felirata a menükártyán, pl. "Ebéd A", "Reggeli". */
+function mealDisplayType(group, mealType) {
+  const pretty = MEAL_GROUPS.find((g) => g.key === group)?.label || 'Ebéd';
+  const variant = mealVariant(mealType);
+  return variant ? `${pretty} ${variant}` : pretty;
+}
+
+/* A kártyán megjelenő étkezés-csoportok: mindig van ebéd, reggeli/vacsora
+   csak akkor, ha az adott napra az orders válaszban tényleg van ilyen menü
+   (őszi/téli szünetben, vagy ha az intézmény nem ad ilyet, egyszerűen nincs). */
+function dayGroups(menusByGroup, ordersByGroup) {
+  return MEAL_ORDER.filter((key) => key === 'lunch' ||
+    (menusByGroup[key]?.length || 0) > 0 || (ordersByGroup[key]?.length || 0) > 0);
+}
+
+/* adott dátumhoz (YYYYMMDD) összeállítja a nap adatait étkezésenként.
+   A `groups` az adott napra létező étkezések [{key, label, menus, order}]:
+   a `menus` a választható menük (pl. A és B ebéd), az `order` pedig az adott
+   étkezéshez tartozó rendelés (a napon tehát reggelihez és ebédhez külön
+   rendelés lehet). A nap-szintű `order` a lemondáshoz az ebéd rendelése. */
 function dayInfo(dateKey) {
   const resp = state.data;
   const iso = displayIso(dateKey); // HU nap a kijelzéshez
   const menu = (resp?.menu || []).filter((m) => ymd(m.mealDate) === dateKey);
-  const menuA = menu.find((m) => /A$/.test(m.mealType)) || null;
-  const menuB = menu.find((m) => /B$/.test(m.mealType)) || null;
-  const order = (resp?.orders || []).find((o) => ymd(o.orderDate || o.menuMeal?.mealDate) === dateKey) || null;
+  const orders = (resp?.orders || [])
+    .filter((o) => ymd(o.orderDate || o.menuMeal?.mealDate) === dateKey);
+
+  const menusByGroup = {};
+  for (const m of menu) {
+    const group = mealGroupOf(m.mealType);
+    (menusByGroup[group] = menusByGroup[group] || []).push(m);
+  }
+  const ordersByGroup = {};
+  for (const o of orders) {
+    const group = mealGroupOf(o.menuMeal?.mealType);
+    (ordersByGroup[group] = ordersByGroup[group] || []).push(o);
+  }
+
+  // A rendelés a választási határidőket tartalmazza. Ha a napra több
+  // étkezés is tartozik, az ebédét használjuk a nap-szintű lemondáshoz.
+  const order = ordersByGroup.lunch?.[0] || orders[0] || null;
+
+  const groups = dayGroups(menusByGroup, ordersByGroup).map((key) => {
+    const info = MEAL_GROUPS.find((g) => g.key === key);
+    return {
+      key,
+      label: info.label,
+      menus: menusByGroup[key] || [],
+      order: ordersByGroup[key]?.[0] || null,
+    };
+  });
+
   const selectDeadline = order?.selectMenuDeadline || null;
   const cancelDeadline = order?.cancelDeadline || null;
   return {
-    dateKey, iso, menuA, menuB, order,
+    dateKey, iso, order, groups,
     selectDeadline,
     cancelDeadline,
     selectClosed: isDeadlinePassed(selectDeadline),
@@ -475,8 +553,9 @@ function collectDays() {
 }
 
 /* ---------- mutations ---------- */
-async function chooseMeal(day, menuLetter) {
-  const o = day.order;
+/* Az `o` a kiválasztott étkezés rendelése (reggeli / ebéd / vacsora),
+   a `menuLetter` pedig a választási betű (A/B/…; üres = egyetlen menü). */
+async function chooseMeal(day, o, menuLetter) {
   if (!o) throw new Error('Nincs rendelés erre a napra.');
   if (state.offline) throw new Error('Offline módban nem módosítható.');
   if (isDeadlinePassed(o.selectMenuDeadline)) throw new Error('A választási határidő lejárt.');
@@ -492,7 +571,7 @@ async function chooseMeal(day, menuLetter) {
     },
     version: o.orderVersion,
     institutionId: state.diner.institutionId,
-    menu: menuLetter,
+    menu: menuLetter || 'A',
   };
   await api('/users/choose-meal', { method: 'POST', body });
 }
@@ -541,36 +620,62 @@ function esc(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function mealCard(day, meal, letter) {
+/* Egy menükártya egy étkezés-csoporton belül (pl. "Ebéd A", "Reggeli").
+   A `group.order` a csoport rendelése; ha nincs (pl. vacsorára nincs
+   rendelés, csak menü), a kártya csak megjelenít, választani nem lehet. */
+function mealCard(day, group, meal) {
   if (!meal) return '';
   const allerg = allergeneNames(meal.allergenes, state.data?.allergenes);
-  const chosen = !!day.order?.menuMeal?.chosen &&
-    (day.order.menuMeal.mealType || '').endsWith(letter);
-  const cancelled = !!day.order?.cancelDate;
+  const letter = mealVariant(meal.mealType);
+  const o = group.order;
+  const tag = mealDisplayType(group.key, meal.mealType);
+  const chosen = !!o?.menuMeal?.chosen && mealVariant(o.menuMeal.mealType) === letter;
+  const cancelled = !!o?.cancelDate;
   let reason = '';
-  if (!day.order) reason = 'Erre a napra nincs rendelés.';
+  if (!o) reason = `Erre a napra nincs rendelés (${group.label.toLowerCase()}).`;
   else if (cancelled) reason = 'A nap le van mondva – előbb vond vissza a lemondást.';
   else if (state.offline) reason = 'Offline módban nem módosítható.';
-  else if (day.selectClosed) reason = `A választási határidő lejárt (${fmtDeadline(day.selectDeadline)}).`;
-  else if (state.busy) reason = 'Feldolgozás…';
+  else if (isDeadlinePassed(o.selectMenuDeadline)) {
+    reason = `A választási határidő lejárt (${fmtDeadline(o.selectMenuDeadline)}).`;
+  } else if (state.busy) reason = 'Feldolgozás…';
   const disabled = !!reason;
   return `
-    <button class="meal-choice${chosen ? ' selected' : ''}${cancelled ? ' cancelled' : ''}${day.selectClosed ? ' closed' : ''}"
-            data-day="${day.dateKey}" data-menu="${letter}"
+    <button class="meal-choice${chosen ? ' selected' : ''}${cancelled ? ' cancelled' : ''}${isDeadlinePassed(o?.selectMenuDeadline) ? ' closed' : ''}"
+            data-day="${day.dateKey}" data-group="${group.key}" data-meal="${esc(meal.id || '')}" data-menu="${esc(letter)}"
             title="${esc(reason)}" ${disabled ? 'disabled' : ''}>
-      <span class="meal-tag">Ebéd ${letter}</span>
+      <span class="meal-tag meal-tag-${group.key}">${esc(tag)}</span>
       <div class="meal-name">${esc(meal.mealName)}</div>
       <div class="meal-meta">${meal.energy ? meal.energy + ' kcal' : ''}${allerg ? ' • ' + esc(allerg) : ''}</div>
     </button>`;
 }
 
+/* Egy étkezés-csoport (Reggeli / Ebéd / Vacsora) blokkja a napkártyán. */
+function mealGroupBlock(day, group) {
+  const menus = Array.isArray(group.menus) ? group.menus : [];
+  if (!menus.length) return '';
+  return `
+    <section class="meal-group meal-group-${group.key}">
+      <header class="meal-group-head">
+        <span class="meal-group-title">${esc(group.label)}</span>
+      </header>
+      <div class="meal-choices">
+        ${menus.map((meal) => mealCard(day, group, meal)).join('')}
+      </div>
+    </section>`;
+}
+
 function isUnselected(day) {
-  return !day.order?.cancelDate && !day.order?.menuMeal?.chosen;
+  const groups = Array.isArray(day.groups) ? day.groups : [];
+  return groups.some((g) => g.order && !g.order.cancelDate && !g.order.menuMeal?.chosen);
 }
 
 function dayBadge(day) {
-  if (day.order?.cancelDate) return '<span class="day-badge cancelled">Lemondva</span>';
-  if (day.order?.menuMeal?.chosen) return '<span class="day-badge ok">✓ Választva</span>';
+  const groups = (Array.isArray(day.groups) ? day.groups : []).filter((g) => g.order);
+  const active = groups.filter((g) => !g.order.cancelDate);
+  if (!active.length) return '<span class="day-badge cancelled">Lemondva</span>';
+  if (active.every((g) => g.order.menuMeal?.chosen)) {
+    return '<span class="day-badge ok">✓ Választva</span>';
+  }
   return '<span class="day-badge none">Nincs választva</span>';
 }
 
@@ -598,6 +703,8 @@ function renderDayCard(day, today) {
   const isToday = day.iso === today;
   const cancelled = !!day.order?.cancelDate;
 
+  // A lemondás a nap egészére szól (ebéd), ezért csak akkor jelenik meg,
+  // ha erre a napra tényleg van rendelés.
   let cancelReason = '';
   if (!day.order) cancelReason = 'Erre a napra nincs rendelés.';
   else if (day.order.consumedDate) cancelReason = 'Az ebéd már elfogyasztva.';
@@ -615,15 +722,13 @@ function renderDayCard(day, today) {
       </div>
       <div class="day-body">
         ${deadlineChips(day)}
-        <div class="meal-choices">
-          ${mealCard(day, day.menuA, 'A')}
-          ${mealCard(day, day.menuB, 'B')}
-        </div>
+        ${(day.groups || []).map((group) => mealGroupBlock(day, group)).join('')}
+        ${day.order ? `
         <button class="btn ${cancelled ? 'primary' : 'danger'} day-cancel${day.cancelClosed ? ' closed' : ''}"
                 data-day="${day.dateKey}" data-action="${cancelled ? 'uncancel' : 'cancel'}"
                 title="${esc(cancelReason)}" ${cancelReason ? 'disabled' : ''}>
           ${cancelled ? 'Mégis kérem (visszavonás)' : 'Ebéd lemondása'}
-        </button>
+        </button>` : ''}
       </div>
     </section>`;
 }
@@ -656,12 +761,15 @@ function renderDays() {
 
   const today = todayIso();
   const current = today >= range.monday && today <= range.sunday;
-  const chosen = days.filter((d) => d.order?.menuMeal?.chosen && !d.order?.cancelDate).length;
+  // A heti összesítő csak a rendeléssel rendelkező napokat számolja,
+  // így a reggeli/vacsora nélküli napok nem rontják az "x/y ebéd" arányt.
+  const orderDays = days.filter((d) => d.order);
+  const chosen = orderDays.filter((d) => d.order.menuMeal?.chosen && !d.order.cancelDate).length;
   DAYS_EL.innerHTML = `
-    <section class="week-group${current ? ' week-current' : ''}">
+    <section class="week-group${current ? ' week-current' : ''}" data-week-offset="${state.weekOffset}">
       <header class="week-head">
         <span class="week-label">${current ? 'Ez a hét' : 'Kiválasztott hét'}</span>
-        <span class="week-meta">${chosen}/${days.length} ebéd kiválasztva</span>
+        <span class="week-meta">${chosen}/${orderDays.length} ebéd kiválasztva</span>
       </header>
       <div class="week-days">
         ${days.map((day) => renderDayCard(day, today)).join('')}
@@ -740,14 +848,17 @@ async function ensureMonthPayload(key, force = false) {
 
 /* A hét napjaihoz szükséges hónapok válaszainak összefűzése. A hónaphatáron
    átnyúló hétnél így a két hónap menüje/rendelése is megjelenik. */
-function mergeMonthPayloads(payloads) {
+function mergeWeekData(payloads) {
   const menu = [], orders = [];
   const seenMenu = new Set(), seenOrder = new Set();
   let allergenes = {};
+  const mealDict = {};
   for (const payload of payloads) {
     for (const chunk of [payload?.data, payload?.dataNext]) {
       if (!chunk) continue;
       if (!Object.keys(allergenes).length && chunk.allergenes) allergenes = chunk.allergenes;
+      // a mealType -> étkezés leképezés hónaponként/ordersNextenként eltérhet
+      Object.assign(mealDict, chunk.mealDict || {});
       for (const m of chunk.menu || []) {
         const key = ymd(m.mealDate) + '|' + m.mealType;
         if (seenMenu.has(key)) continue;
@@ -763,13 +874,61 @@ function mergeMonthPayloads(payloads) {
       }
     }
   }
-  return { menu, orders, allergenes };
+  return { menu, orders, allergenes, mealDict };
+}
+
+/* Egy megadott hétre betöltött (memória- vagy localStorage-) adatokból
+   megmondja, van-e egyáltalán étel (menü) azon a héten. Az őszi/téli
+   szünetek hetei üresek, ezeket a nyilakkal való navigáció átugorja. */
+function weekHasMeals(range, payloads) {
+  const data = mergeWeekData(payloads);
+  return (data.menu || []).some((m) => {
+    const iso = displayIso(ymd(m.mealDate));
+    return iso >= range.monday && iso <= range.sunday;
+  });
+}
+
+/* A localStorage-ba mentett havi válasz betöltése egy hónaphoz (offline
+   esethez), ugyanabban a formában, ahogy az ensureMonthPayload visszaadja. */
+function cachedPayloadForMonth(key) {
+  const cached = loadMonthCache(key);
+  return cached ? { data: cached.data || null, dataNext: cached.dataNext || null } : null;
+}
+
+/* Merre és meddig keressük a nem üres hetet (kb. egy év, előre/hátra). */
+const WEEK_SKIP_LIMIT = 52;
+
+/* A megadott héttől a `dir` (-1 vagy +1) irányban az első olyan hét
+   offsetje, amelyen van étel. Ha nincs ilyen (pl. nyár közepe), akkor az
+   utolsó vizsgált hét jön vissza, hogy a felhasználó lássa, ott nincs menü. */
+async function findMealWeek(startOffset, dir, force = false) {
+  let lastChecked = startOffset;
+  for (let step = 1; step <= WEEK_SKIP_LIMIT; step++) {
+    const offset = startOffset + dir * step;
+    const range = weekRangeForOffset(offset);
+    const payloads = [];
+    for (const key of monthsForWeek(range)) {
+      try {
+        payloads.push(await ensureMonthPayload(key, force));
+      } catch (_) {
+        // hálózati hiba: a localStorage-os tartalékot használjuk
+        const cached = cachedPayloadForMonth(key);
+        if (cached) payloads.push(cached);
+      }
+    }
+    lastChecked = offset;
+    // ha egyetlen hónap adatát sem sikerült megszerezni, ne ugorjunk tovább
+    if (!payloads.length) return offset;
+    if (weekHasMeals(range, payloads)) return offset;
+  }
+  return lastChecked;
 }
 
 let weekLoadSeq = 0;
 
-async function loadWeek(offset, force = false) {
+async function loadWeek(offset, force = false, { skipEmpty = false } = {}) {
   const seq = ++weekLoadSeq;
+  const prevOffset = state.weekOffset; // a navigáció irányához (üres hét átugrása)
   state.weekOffset = offset;
   state.weekRange = weekRangeForOffset(offset);
   state.autoScrolled = state.autoScrolled && offset === 0;
@@ -778,8 +937,8 @@ async function loadWeek(offset, force = false) {
   if (force) state.months = {};
 
   setStatus('Betöltés…');
-  const months = monthsForWeek(state.weekRange);
-  const payloads = [];
+  let months = monthsForWeek(state.weekRange);
+  let payloads = [];
   let lastErr = null;
 
   for (const key of months) {
@@ -801,7 +960,21 @@ async function loadWeek(offset, force = false) {
     return;
   }
 
-  state.data = mergeMonthPayloads(payloads);
+  const data = mergeWeekData(payloads);
+
+  // Nyilakkal való navigációnál az üres (szünet) heteket átugorjuk.
+  if (skipEmpty && !data.menu.length) {
+    const dir = offset >= prevOffset ? 1 : -1;
+    const target = await findMealWeek(offset, dir, force);
+    if (seq !== weekLoadSeq) return;
+    if (target !== offset) {
+      // a továbblépés már nem ugrik, hogy ne lehessen végtelen ciklusba futni
+      await loadWeek(target, force);
+      return;
+    }
+  }
+
+  state.data = data;
   state.dataNext = null;
   renderDays();
   setStatus(lastErr ? 'Figyelem: ehhez a hétre csak részleges adat érhető el.' : '');
@@ -897,14 +1070,19 @@ DINERS_EL.addEventListener('click', async (e) => {
   }
 });
 
-document.getElementById('prev-week').addEventListener('click', () => loadWeek(state.weekOffset - 1));
-document.getElementById('next-week').addEventListener('click', () => loadWeek(state.weekOffset + 1));
+// A nyilakkal lépkedve az étel nélküli (szünet) heteket átugorjuk, hogy
+// ne kelljen üres étlapokon keresztül görgetni.
+document.getElementById('prev-week').addEventListener('click', () => loadWeek(state.weekOffset - 1, false, { skipEmpty: true }));
+document.getElementById('next-week').addEventListener('click', () => loadWeek(state.weekOffset + 1, false, { skipEmpty: true }));
 
 DAYS_EL.addEventListener('click', (e) => {
   const mealBtn = e.target.closest('.meal-choice');
   if (mealBtn && !mealBtn.disabled) {
     const day = dayInfo(mealBtn.dataset.day);
-    withBusy(() => chooseMeal(day, mealBtn.dataset.menu));
+    // A kattintott étkezés (reggeli / ebéd / vacsora) rendelését használjuk,
+    // mert a napon több rendelés is lehet (a choose-meal az orderId-t várja).
+    const group = (day.groups || []).find((g) => g.key === mealBtn.dataset.group);
+    withBusy(() => chooseMeal(day, group?.order || day.order, mealBtn.dataset.menu));
     return;
   }
   const cancelBtn = e.target.closest('.day-cancel');
@@ -933,6 +1111,136 @@ async function handleOnline() {
     if (state.data) renderDays();
   }
 }
+
+/* ---------- fejlesztői demó (bejelentkezés és API nélkül) ----------
+   Böngészőben:  ZipMealLite.demo({ breakfast: true, dinner: true })
+   A megadott hétre hamis étlapot/rendeléseket tölt be, hogy a reggeli/vacsora
+   megjelenítés kipróbálható legyen valódi fiók nélkül. */
+function demoWeekRange(offset, withMeals) {
+  const range = weekRangeForOffset(offset);
+  const menu = [];
+  const orders = [];
+  if (!withMeals) return { menu, orders };
+
+  const types = ['Ebéd A', 'Ebéd B'];
+  if (state.demo?.breakfast) types.unshift('Reggeli');
+  if (state.demo?.dinner) types.push('Vacsora');
+
+  const d = new Date(range.monday + 'T12:00:00');
+  const end = new Date(range.sunday + 'T12:00:00');
+  const deadline = new Date(Date.now() + 86400000).toISOString();
+  let n = 0;
+  while (d <= end) {
+    // hétvégén nincs menü
+    if (d.getDay() !== 0 && d.getDay() !== 6) {
+      const key = localIso(d);
+      // Az API a magyar éjfélt T23:00:00Z-ként küldi (előző nap 23:00 UTC),
+      // ezért a mealDate az előző napot tartalmazza – a demó is így utánozza.
+      const utcKey = localIso(new Date(d.getTime() - 86400000));
+      const mealDate = utcKey + 'T23:00:00Z';
+      const orderDate = utcKey + 'T23:00:00.000Z';
+      for (const type of types) {
+        const group = mealGroupOf(type);
+        const variant = mealVariant(type);
+        menu.push({
+          id: `demo-${key}-${type}`,
+          mealDate,
+          mealType: type,
+          mealName: `${group} ${variant} mintaétel – ${key}`.trim(),
+          energy: String(600 + (n++ % 250)),
+          allergenes: '1,7,12',
+        });
+        orders.push({
+          orderDate,
+          selectMenuDeadline: deadline,
+          cancelDeadline: deadline,
+          cancelDate: null,
+          consumedDate: null,
+          quantity: 1,
+          cardId: state.diner?.cardId,
+          externalOrderId: `${key}${type}`,
+          externalOrderTypeId: 1,
+          version: 1,
+          orderVersion: 1,
+          institutionId: state.diner?.institutionId,
+          menuMeal: {
+            id: `demo-order-${key}-${type}`,
+            mealDate,
+            mealName: `${group} ${variant} mintaétel – ${key}`.trim(),
+            mealType: type,
+            chosen: variant === 'A' || !variant,
+          },
+        });
+      }
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return { menu, orders };
+}
+
+function demoMerge(payloads) {
+  const data = mergeWeekData(payloads);
+  data.mealDict = {
+    Reggeli: 'breakfast', Tízórai: 'brunch', Ebéd: 'lunch', 'Ebéd A': 'lunch',
+    'Ebéd B': 'lunch', Uzsonna: 'snack', Vacsora: 'dinner',
+  };
+  data.allergenes = {
+    1: 'Glutén', 3: 'Tojás', 7: 'Tej / laktóz', 10: 'Mustár', 12: 'Kén-dioxid',
+  };
+  return data;
+}
+
+const realLoadWeek = loadWeek;
+
+async function demoLoadWeek(offset = 0, force = false, { skipEmpty = false } = {}) {
+  const prevOffset = state.weekOffset;
+  // Demóban minden 3. hét üres (pl. szünet), hogy az átugrás kipróbálható legyen.
+  const withMeals = ((offset % 3) + 3) % 3 !== 1;
+  state.weekOffset = offset;
+  state.weekRange = weekRangeForOffset(offset);
+  setStatus('Demó adatok – bejelentkezés nélkül.');
+  const week = demoWeekRange(offset, withMeals);
+  const data = demoMerge([{ data: { menu: week.menu, orders: week.orders }, dataNext: null }]);
+
+  if (skipEmpty && !data.menu.length) {
+    const dir = offset >= prevOffset ? 1 : -1;
+    return demoLoadWeek(offset + dir, force, { skipEmpty });
+  }
+  state.data = data;
+  renderDays();
+}
+
+window.ZipMealLite = {
+  state,
+  // belső segédfüggvények (teszteléshez / hibakereséshez)
+  debug: {
+    displayIso: (k) => displayIso(k),
+    ymd: (i) => ymd(i),
+    dayInfo: (k) => dayInfo(k),
+    collectDays: () => collectDays(),
+    // a kijelzett nap ellenőrzése: a menu/order UTC kulcsa + 1 nap
+    dayKeyFromMenu: (m) => displayIso(ymd(m.mealDate)),
+  },
+  clearDemo() {
+    state.data = null;
+    showView('login');
+    loadWeek = realLoadWeek;
+  },
+  demo({ breakfast = false, dinner = false, weekOffset = 0 } = {}) {
+    state.demo = { breakfast, dinner };
+    state.diner = state.diner || {
+      cardId: 'DEMO', institutionId: 'DEMO', fullName: 'Demó Diák',
+      group: '9.A', institutionName: 'Demó Iskola',
+    };
+    state.profile = state.profile || { fullName: 'Demó Diák', group: '9.A' };
+    state.autoScrolled = false;
+    loadWeek = demoLoadWeek;
+    showView('main');
+    document.getElementById('user-name').textContent = 'Demó Diák';
+    document.getElementById('user-group').textContent = 'Demó Iskola • 9.A';
+    return demoLoadWeek(weekOffset);
+  },
+};
 
 /* ---------- init ---------- */
 (async function init() {

@@ -104,6 +104,24 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 
 .error { color: var(--danger); font-size: .85rem; margin: 0; }
 
+/* Adatkezelési figyelmeztetés a bejelentkezés alatt. */
+.login-disclaimer {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: 2px 0 0;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: .74rem; line-height: 1.45; font-weight: 500;
+  color: var(--muted);
+  background: #f4f5fb;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.disclaimer-icon {
+  width: 16px; height: 16px; flex: none; margin-top: 1px;
+  fill: none; stroke: var(--ok); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
 /* ---------- diner (child) selector ---------- */
 .diner-view { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
 .diner-card {
@@ -240,17 +258,19 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 /* ---------- weekly layout ---------- */
 .days { padding-bottom: 10px; }
 
+/* A hét-doboznak szándékosan nincs saját (majdnem fehér) háttere: csak
+   halvány körvonalat kap, így a fehér napkártyák jól elválnak tőle. */
 .week-group {
   margin: 0 0 26px;
   padding: 14px 14px 18px;
-  background: rgba(255, 255, 255, .5);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 1px solid rgba(70, 48, 235, .14);
   border-radius: calc(var(--radius) + 4px);
 }
 .week-group:last-child { margin-bottom: 6px; }
 .week-group.week-current {
-  background: linear-gradient(180deg, rgba(70, 48, 235, .06), rgba(255, 255, 255, .55) 120px);
-  border-color: rgba(70, 48, 235, .22);
+  background: linear-gradient(180deg, rgba(70, 48, 235, .05), transparent 140px);
+  border-color: rgba(70, 48, 235, .24);
 }
 .week-head {
   display: flex; align-items: baseline; justify-content: space-between;
@@ -270,20 +290,28 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 }
 @media (max-width: 420px) { .week-days { grid-template-columns: 1fr; } }
 
+/* A napok kártyái fehér alapon, határozottabb körvonallal és vastagabb
+   árnyékkal válnak el a világos oldalháttértől. */
 .day-card {
   background: var(--card);
+  border: 1px solid rgba(70, 48, 235, .16);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 24px rgba(34, 26, 99, .13), 0 2px 4px rgba(34, 26, 99, .06);
   overflow: hidden;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
   scroll-margin-top: 88px;
 }
-.day-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-.day-card.day-today { outline: 2px solid var(--primary); }
+.day-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(70, 48, 235, .3);
+  box-shadow: var(--shadow-lg);
+}
+.day-card.day-today { outline: 2px solid var(--primary); border-color: transparent; }
 /* Kiválasztás nélküli nap: halvány pirosas kártya + piros X a badge-ben */
 .day-card.day-unselected {
   background: linear-gradient(180deg, rgba(217,54,62,.075), var(--card) 46%);
-  box-shadow: 0 4px 20px rgba(217,54,62,.10);
+  border-color: rgba(217, 54, 62, .28);
+  box-shadow: 0 8px 24px rgba(217, 54, 62, .16), 0 2px 4px rgba(34, 26, 99, .06);
 }
 .day-card.day-unselected .day-head {
   background: linear-gradient(135deg, rgba(217,54,62,.11), rgba(217,54,62,.04));
@@ -345,6 +373,27 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 
 .day-body { padding: 14px 16px 16px; }
 
+/* Étkezés-csoportok a napkártyán (Reggeli / Ebéd / Vacsora). A reggeli és a
+   vacsora blokk csak akkor jelenik meg, ha arra a napra van is menü/rendelés. */
+.meal-group + .meal-group {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.meal-group-head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.meal-group-title {
+  font-size: .74rem; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted);
+}
+/* A fő (ebéd) blokk címe kicsit hangsúlyosabb, a reggeli/vacsora halványabb. */
+.meal-group-lunch .meal-group-title { color: #3d3f56; }
+.meal-group-breakfast .meal-group-title { color: #b07a12; }
+.meal-group-dinner .meal-group-title { color: #6b4bb8; }
+
 .meal-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 480px) { .meal-choices { grid-template-columns: 1fr; } }
 
@@ -375,6 +424,11 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   margin-bottom: 8px;
   transition: background .15s, color .15s;
 }
+/* A menü címkéje étkezésenként más színű, hogy a reggeli/vacsora is
+   megkülönböztethető legyen az ebédtől. */
+.meal-tag.meal-tag-breakfast { color: #a86a00; background: #fdf0d5; }
+.meal-tag.meal-tag-dinner { color: #5b3fb3; background: #eee8ff; }
+
 .meal-choice .meal-name { font-size: .9rem; line-height: 1.4; }
 .meal-choice .meal-meta { font-size: .74rem; color: var(--muted); margin-top: 7px; }
 
