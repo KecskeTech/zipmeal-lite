@@ -457,17 +457,12 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .day-cancel.closed { filter: grayscale(1); opacity: .5; }
 .meal-choice.closed:disabled, .day-cancel.closed:disabled { cursor: not-allowed; }
 
-/* A chip és az étel neve egy sorban: a chip fix szélességű, a név a maradék
-   helyen tördelődik. Így a chip nem foglal külön sort. */
-.meal-head {
-  display: flex; align-items: baseline; gap: 8px;
-}
 .meal-tag {
   display: inline-flex; align-items: center; gap: 6px;
-  flex: none;
   font-weight: 800; font-size: .72rem;
   color: var(--primary); background: var(--primary-soft);
   border-radius: 999px; padding: 4px 11px;
+  margin-bottom: 8px;
   transition: background .15s, color .15s;
 }
 /* A menü címkéje étkezésenként más színű, hogy a reggeli/vacsora is
@@ -475,7 +470,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .meal-tag.meal-tag-breakfast { color: #a86a00; background: #fdf0d5; }
 .meal-tag.meal-tag-dinner { color: #5b3fb3; background: #eee8ff; }
 
-.meal-choice .meal-name { flex: 1; min-width: 0; font-size: .9rem; line-height: 1.4; }
+.meal-choice .meal-name { font-size: .9rem; line-height: 1.4; }
 .meal-choice .meal-meta { font-size: .74rem; color: var(--muted); margin-top: 7px; }
 
 .meal-choice.selected {
@@ -484,9 +479,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   box-shadow: 0 4px 16px rgba(70,48,235,.14);
 }
 .meal-choice.selected .meal-tag { background: var(--primary); color: #fff; }
-/* A jobb felső jelzés (✓ / lemondva) ne lógjon rá az első sorra. */
-.meal-choice.selected .meal-head { padding-right: 30px; }
-.meal-choice.cancelled .meal-head { padding-right: 74px; }
 .meal-choice.selected::after {
   content: '✓';
   position: absolute; top: 10px; right: 12px;

@@ -690,10 +690,8 @@ function mealCard(day, group, meal) {
     <button class="meal-choice${chosen ? ' selected' : ''}${cancelled ? ' cancelled' : ''}${isDeadlinePassed(o?.selectMenuDeadline) ? ' closed' : ''}"
             data-day="${day.dateKey}" data-group="${group.key}" data-meal="${esc(meal.id || '')}" data-menu="${esc(letter)}"
             title="${esc(reason)}" ${disabled ? 'disabled' : ''}>
-      <div class="meal-head">
-        <span class="meal-tag meal-tag-${group.key}">${esc(tag)}</span>
-        <div class="meal-name">${esc(meal.mealName)}</div>
-      </div>
+      <span class="meal-tag meal-tag-${group.key}">${esc(tag)}</span>
+      <div class="meal-name">${esc(meal.mealName)}</div>
       <div class="meal-meta">${meal.energy ? meal.energy + ' kcal' : ''}${allerg ? ' • ' + esc(allerg) : ''}</div>
     </button>`;
 }
