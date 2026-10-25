@@ -733,11 +733,11 @@ function deadlineChips(day) {
   const parts = [];
   if (day.selectDeadline) {
     parts.push(`<span class="deadline${day.selectClosed ? ' expired' : ''}" title="Étel kiválasztásának / módosításának határideje">
-      ✎ Választás: ${esc(fmtDeadline(day.selectDeadline))}${day.selectClosed ? ' (lejárt)' : ''}</span>`);
+      ✎ Választás: ${esc(fmtDeadline(day.selectDeadline))}</span>`);
   }
   if (day.cancelDeadline) {
     parts.push(`<span class="deadline${day.cancelClosed ? ' expired' : ''}" title="Ebéd lemondásának / visszavonásának határideje">
-      ✕ Lemondás: ${esc(fmtDeadline(day.cancelDeadline))}${day.cancelClosed ? ' (lejárt)' : ''}</span>`);
+      ✕ Lemondás: ${esc(fmtDeadline(day.cancelDeadline))}</span>`);
   }
   return parts.length ? `<div class="deadlines">${parts.join('')}</div>` : '';
 }
