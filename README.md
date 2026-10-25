@@ -3,7 +3,7 @@
 Nem hivatalos, mobilbarát webes ebédválasztó a ZipMeal API-hoz. Egyetlen statikus
 webalkalmazás, backend nélkül.
 
-Az alkalmazás ✨ **vibe codeolással** készült – az ötlet és az utóellenőrzés emberi.
+Az alkalmazás **vibe codeolva** van. A promptokat ember írja, minden mást az AI.
 
 ## Élő oldal
 
@@ -87,8 +87,8 @@ Utána: http://localhost:8000
 
 ## Vibe coding
 
-Ez a projekt ✨ vibe codeolással készült: a funkciók nagy része AI-asszisztens
-segítségével, gyors iterációkkal született, emberi ötletadás és utóellenőrzés
+Ez a projekt vibe codeolva van: a funkciók nagy része AI-asszisztens
+segítségével, gyors iterációkkal született, emberi ötletadás ~~és utóellenőrzés~~
 mellett. A kód ennek megfelelően egyszerű, olvasható és könnyen módosítható.
 
 ## Licenc
