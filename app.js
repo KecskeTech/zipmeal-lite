@@ -1205,15 +1205,130 @@ let pinDir = 0;
 
 function navigateWeek(dir) {
   if (state.stayPinned) {
-    if (dir === pinDir) return; // ugyanabba az irányba már nincs mit tenni
+    if (dir === pinDir) return Promise.resolve(); // ugyanabba az irányba már nincs mit tenni
     state.stayPinned = false;
   }
   pinDir = dir;
-  loadWeek(state.weekOffset + dir, false, { skipEmpty: true, dir });
+  return loadWeek(state.weekOffset + dir, false, { skipEmpty: true, dir });
 }
 
 document.getElementById('prev-week').addEventListener('click', () => navigateWeek(-1));
 document.getElementById('next-week').addEventListener('click', () => navigateWeek(1));
+
+/* ---------- mobil gesztus: hétváltás húzással ----------
+   Balra húzás → következő hét, jobbra húzás → előző hét (Instagram-szerűen).
+   Csak egyértelműen vízszintes mozdulatnál lépünk, a függőleges görgetést
+   nem fogjuk el. A húzás alatt a tartalom kicsit követi az ujjat. */
+const SWIPE_MIN_DX = 56;      // ennyi px húzás után váltunk hetet
+const SWIPE_MIN_TOTAL = 24;   // ennél kisebb mozdulat soha nem vált hetet
+const SWIPE_LOCK_DX = 10;     // ennyi px után dől el, hogy vízszintes-e a mozdulat
+const SWIPE_MAX_TILT = 1.15;  // |dx| / |dy| arány a vízszintes felismeréshez
+const SWIPE_MAX_SHIFT = 96;   // a húzás alatti maximális elmozdulás (px)
+const SWIPE_SLIDE_MS = 260;
+
+let swipeStart = null;
+let swipeIsHorizontal = false;
+let swipeSuppressClick = false;
+let swipeSuppressTimer = 0;
+let daysSnapTimer = 0;
+let weekInTimer = 0;
+
+function resetDaysTransform(animate = false) {
+  DAYS_EL.classList.toggle('days-snap', animate);
+  DAYS_EL.style.transform = '';
+  clearTimeout(daysSnapTimer);
+  if (animate) {
+    daysSnapTimer = setTimeout(() => DAYS_EL.classList.remove('days-snap'), 220);
+  }
+}
+
+/* Az új hét tartalma oldalról úszik be (a húzás irányától függően). */
+function animateWeekIn(dir) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  DAYS_EL.classList.remove('week-in-next', 'week-in-prev');
+  void DAYS_EL.offsetWidth; // az animáció újraindításához kell az újralayoutolás
+  DAYS_EL.classList.add(dir > 0 ? 'week-in-next' : 'week-in-prev');
+  clearTimeout(weekInTimer);
+  weekInTimer = setTimeout(() => {
+    DAYS_EL.classList.remove('week-in-next', 'week-in-prev');
+  }, SWIPE_SLIDE_MS + 60);
+}
+
+function endWeekSwipe(e) {
+  if (!swipeStart || !swipeIsHorizontal) {
+    swipeStart = null;
+    swipeIsHorizontal = false;
+    return;
+  }
+  const t = e.changedTouches?.[0];
+  const start = swipeStart;
+  swipeStart = null;
+  swipeIsHorizontal = false;
+  if (!t) return;
+
+  const dx = t.clientX - start.x;
+  const dt = Math.max(1, Date.now() - start.t);
+  const velocity = Math.abs(dx) / dt; // px / ms (gyors pöccintés is elég)
+  const go = Math.abs(dx) >= SWIPE_MIN_TOTAL &&
+    (Math.abs(dx) >= SWIPE_MIN_DX || velocity > 0.55);
+
+  resetDaysTransform(true);
+  if (!go) return;
+
+  // A húzás végén keletkező kattintás ne válasszon ételt / ne mondjon le napot.
+  swipeSuppressClick = true;
+  clearTimeout(swipeSuppressTimer);
+  swipeSuppressTimer = setTimeout(() => { swipeSuppressClick = false; }, 500);
+
+  const dir = dx < 0 ? 1 : -1; // balra húzás → következő hét
+  Promise.resolve(navigateWeek(dir)).then(() => {
+    if (!state.stayPinned) animateWeekIn(dir);
+  });
+}
+
+DAYS_EL.addEventListener('touchstart', (e) => {
+  resetDaysTransform(false);
+  if (e.touches.length !== 1 || state.busy) {
+    swipeStart = null;
+    swipeIsHorizontal = false;
+    return;
+  }
+  const t = e.touches[0];
+  swipeStart = { x: t.clientX, y: t.clientY, t: Date.now() };
+  swipeIsHorizontal = false;
+}, { passive: true });
+
+DAYS_EL.addEventListener('touchmove', (e) => {
+  if (!swipeStart || e.touches.length !== 1) return;
+  const t = e.touches[0];
+  const dx = t.clientX - swipeStart.x;
+  const dy = t.clientY - swipeStart.y;
+
+  if (!swipeIsHorizontal) {
+    if (Math.abs(dx) < SWIPE_LOCK_DX && Math.abs(dy) < SWIPE_LOCK_DX) return;
+    if (Math.abs(dx) <= Math.abs(dy) * SWIPE_MAX_TILT) {
+      // függőleges görgetés: erre a gesztusra nem lépünk közbe
+      swipeStart = null;
+      return;
+    }
+    swipeIsHorizontal = true;
+  }
+
+  if (e.cancelable) e.preventDefault();
+  const shift = Math.max(-SWIPE_MAX_SHIFT, Math.min(SWIPE_MAX_SHIFT, dx * 0.55));
+  DAYS_EL.style.transform = `translate3d(${shift}px, 0, 0)`;
+}, { passive: false });
+
+DAYS_EL.addEventListener('touchend', endWeekSwipe, { passive: true });
+DAYS_EL.addEventListener('touchcancel', endWeekSwipe, { passive: true });
+
+// A swipe-ot lezáró szintetikus kattintás elnyelése (capture fázisban).
+DAYS_EL.addEventListener('click', (e) => {
+  if (!swipeSuppressClick) return;
+  swipeSuppressClick = false;
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
 
 /* „Mai nap” gomb: visszaugrik az aktuális hétre, majd a mai (ha nincs, a
    következő ételes) napkártyára görget. */

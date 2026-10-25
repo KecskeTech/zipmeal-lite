@@ -271,6 +271,27 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   display: flex; align-items: center; justify-content: center; gap: 14px;
   margin: 18px 0 16px;
 }
+/* Mobilon a két nyíl a képernyő szélén lebeg, függőlegesen középen, hogy
+   egy kézzel is elérhető legyen, és ne foglaljon helyet a tartalomból.
+   A hét címkéje középen marad, mert a fix elemek kikerülnek a flex sorból. */
+@media (max-width: 640px) {
+  .week-nav .btn.nav {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 15;
+    width: 44px; height: 44px;
+    font-size: 1.55rem;
+    background: rgba(255, 255, 255, .92);
+    border: 1px solid rgba(70, 48, 235, .18);
+    box-shadow: 0 6px 20px rgba(46, 34, 140, .22);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  .week-nav .btn.nav:active { transform: translateY(-50%) scale(.94); }
+  #prev-week { left: calc(6px + env(safe-area-inset-left, 0px)); }
+  #next-week { right: calc(6px + env(safe-area-inset-right, 0px)); }
+}
 .week-nav-label {
   display: flex; flex-direction: column; align-items: center;
   min-width: 0; text-align: center; line-height: 1.2;
@@ -297,7 +318,27 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 @keyframes pop { from { opacity: 0; transform: translate(-50%, 8px); } }
 
 /* ---------- weekly layout ---------- */
-.days { padding-bottom: 10px; }
+/* A vízszintes húzást a JS kezeli (touch-action: pan-y), így a függőleges
+   görgetés zavartalan marad, és a húzás közben sem lehet oldalra pánolni. */
+.days {
+  padding-bottom: 10px;
+  touch-action: pan-y;
+}
+.days.days-snap { transition: transform .18s ease-out; }
+@keyframes week-in-next {
+  from { opacity: .35; transform: translate3d(7%, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes week-in-prev {
+  from { opacity: .35; transform: translate3d(-7%, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+.days.week-in-next { animation: week-in-next .26s ease-out; }
+.days.week-in-prev { animation: week-in-prev .26s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .days.days-snap { transition: none; }
+  .days.week-in-next, .days.week-in-prev { animation: none; }
+}
 
 /* A hét-doboznak szándékosan nincs saját (majdnem fehér) háttere: csak
    halvány körvonalat kap, így a fehér napkártyák jól elválnak tőle. */

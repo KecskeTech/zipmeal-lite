@@ -125,6 +125,12 @@ kivágáshoz a magyar feliratot használja) – ne írd át ASCII-ra.
 - Ha a keresett irányban nincs ételes hét (pl. a nyár elején), `findMealWeek` `null`-t
   ad: ilyenkor **nem lépünk sehova**, a legutóbbi ételes hét marad (és `stayPinned`
   miatt ugyanabba az irányba a további kattintások sem próbálkoznak újra).
+- Mobilon a `#days` területen **vízszintes swipe** is navigál: balra húzás →
+  következő hét, jobbra → előző hét (`touchstart`/`touchmove`/`touchend`, csak
+  egyértelműen vízszintes mozdulatnál; a függőleges görgetést nem fogja el).
+  A swipe végén keletkező kattintást capture fázisban elnyeli, nehogy ételt
+  válasszon. A húzás alatt `transform`, utána `week-in-next` / `week-in-prev`
+  animáció; `prefers-reduced-motion` esetén nincs animáció.
 - `weekLoadSeq` védi a versenyhelyzetet (közben másik hétre lépés).
 - A felső sáv **„Mai nap”** gombja (`jumpToToday()`): `loadWeek(0)`, majd a mai
   napkártyára görget (ha nincs mai menü, a következő ételes napra, végső esetben
@@ -164,6 +170,10 @@ weekRange, busy, refreshing, offline, autoScrolled, demo`.
 - A login képernyőn `.login-features` (Offline működés, Gyors, egyszerű), alján
   `.login-disclaimer` (adatkezelési figyelmeztetés) és `.login-vibecoded` jelzés.
 - Toast: `setStatus()`; a gombok letiltása `state.busy` és a határidők alapján történik.
+- Mobilon (≤640px) a hét-navigációs nyilak `position: fixed`-del a képernyő
+  bal/jobb szélén, függőlegesen középen lebegnek (safe-area-t figyelve), így
+  egy kézzel is elérhetők és nem foglalnak helyet a tartalomból. Desktopon
+  maradnak a hét címkéje mellett, a normál folyamban.
 
 ## Demó / tesztelés
 
