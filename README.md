@@ -31,6 +31,10 @@ https://ziplite.kecske.win/
 - A **választási (`selectMenuDeadline`) és lemondási (`cancelDeadline`) határidők**
   külön megjelenítése; a lejárt határidő után az érintett gombok szürkék / letiltottak
 - Nyitáskor automatikusan az **aznapi ebédre ugrik** (ha nincs mai menü, a következő napra)
+- **Cache-elt indulás**: ha korábban már be voltál jelentkezve, az app a mentett
+  étlapot azonnal megjeleníti (a mai napra görgetve) a login képernyő helyett, és
+  a háttérben frissít. A „Frissítés…” jelzés alul látszik; ha közben változott a
+  menü, automatikusan az új étlap jelenik meg.
 - Kiválasztás nélküli napok piros kiemelése
 - Szülői fióknál gyermek kiválasztása belépés után, illetve későbbi váltás
 - Telepíthető PWA; offline módban a korábban betöltött étlap a böngésző

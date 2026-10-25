@@ -143,7 +143,11 @@ kivágáshoz a magyar feliratot használja) – ne írd át ASCII-ra.
 ## Állapot & cache
 
 `state`: `diner, profile, diners, isParent, data, dataNext, months, weekOffset,
-weekRange, busy, offline, autoScrolled, demo`.
+weekRange, busy, refreshing, offline, autoScrolled, demo`.
+
+- Induláskor cache-first: ha van token + `session` cache, a `restoreCachedSession({offline:false})`
+  azonnal renderel a `loadCachedWeek()`-kel, majd a háttérben `startSession({keepActiveDiner:true})`
+  frissít (`state.refreshing` alatt a kártyák tiltottak, status: „Frissítés…”).
 
 - Tokenek: `localStorage` (`zm_access`, `zm_refresh`).
 - Offline cache: `zm_cache_v1_*` (`month_<cardId>_<YYYYMM>` és `session`).

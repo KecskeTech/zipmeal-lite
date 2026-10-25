@@ -156,6 +156,7 @@ const state = {
   weekOffset: 0, // 0 = aktuális hét, -1 = előző hét, +1 = következő hét
   weekRange: null, // { week, monday, sunday, offset }
   busy: false,
+  refreshing: false, // induló háttér-frissítés a cache-elt étlap felett
   offline: false, // offline mód: becsült adatok, módosítás tiltva
   autoScrolled: false, // már az aznapi ebédre ugrottunk?
   lastMealWeek: null, // az utoljára megjelenített, étellel rendelkező hét offsetje
@@ -370,9 +371,31 @@ function setActiveDiner(me) {
   sessionCache.save();
 }
 
-/* Offline indulás: a legutóbbi munkamenet (étkezők + aktív étkező + havi
-   adatok) visszaállítása a localStorage cache-ből. */
-function restoreCachedSession() {
+/* Az aktuális hét azonnali kirajzolása kizárólag a localStorage-ban mentett
+   havi válaszokból. Így induláskor nem kell a hálózatra várni: a korábban
+   betöltött étlap azonnal látszik, a frissítés a háttérben fut. */
+function loadCachedWeek(offset = 0) {
+  if (!state.diner) return false;
+  const range = weekRangeForOffset(offset);
+  const payloads = monthsForWeek(range)
+    .map((key) => cachedPayloadForMonth(key))
+    .filter(Boolean);
+  if (!payloads.length) return false;
+
+  state.weekOffset = offset;
+  state.weekRange = range;
+  state.autoScrolled = false;
+  state.data = mergeWeekData(payloads);
+  state.dataNext = null;
+  if (dataHasMeals(range, state.data)) state.lastMealWeek = offset;
+  renderDays();
+  return true;
+}
+
+/* A legutóbbi munkamenet (étkezők + aktív étkező + havi adatok)
+   visszaállítása a localStorage cache-ből. `offline: false` esetén csak a
+   cache-ből renderelünk, a hálózati frissítést a hívó indítja el. */
+function restoreCachedSession({ offline = true } = {}) {
   const saved = sessionCache.load();
   if (!saved || !Array.isArray(saved.diners) || !saved.diners.length) return false;
 
@@ -383,8 +406,13 @@ function restoreCachedSession() {
   if (saved.diner && saved.profile) {
     setActiveDiner(saved.profile);
     showView('main');
-    setOffline(true);
-    loadWeek(0);
+    // Az offline állapotot a render ELŐTT állítjuk be, hogy a kártyák
+    // rögtön letiltva jelenjenek meg.
+    if (offline) setOffline(true);
+    if (loadCachedWeek(0)) return true;
+    // Nincs mentett havi adat: ilyenkor offline a hálózat nélküli út
+    // próbálkozik, online pedig a háttér-frissítés tölti be.
+    if (offline) loadWeek(0);
     return true;
   }
 
@@ -392,8 +420,10 @@ function restoreCachedSession() {
   state.profile = null;
   renderDiners();
   showView('diner');
-  DINER_ERROR_EL.textContent = 'Offline mód: a becsült adatok láthatók, a módosítás nem elérhető.';
-  DINER_ERROR_EL.hidden = false;
+  DINER_ERROR_EL.textContent = offline
+    ? 'Offline mód: a becsült adatok láthatók, a módosítás nem elérhető.'
+    : '';
+  DINER_ERROR_EL.hidden = !offline;
   return true;
 }
 
@@ -681,6 +711,7 @@ function mealCard(day, group, meal) {
   let reason = '';
   if (!o) reason = `Erre a napra nincs rendelés (${group.label.toLowerCase()}).`;
   else if (cancelled) reason = 'A nap le van mondva – előbb vond vissza a lemondást.';
+  else if (state.refreshing) reason = 'Frissítés folyamatban…';
   else if (state.offline) reason = 'Offline módban nem módosítható.';
   else if (isDeadlinePassed(o.selectMenuDeadline)) {
     reason = `A választási határidő lejárt (${fmtDeadline(o.selectMenuDeadline)}).`;
@@ -861,14 +892,21 @@ async function chooseDiner(cardId) {
   await loadWeek(0);
 }
 
-/* Bejelentkezés / munkamenet indítása: szülőnél előbb étkezőt választunk. */
-async function startSession() {
+/* Bejelentkezés / munkamenet indítása: szülőnél előbb étkezőt választunk.
+   `keepActiveDiner`: cache-elt indulásnál a korábban kiválasztott gyermeknél
+   maradunk (ha még létezik), és a meglévő hetet frissítjük a háttérben. */
+async function startSession({ keepActiveDiner = false } = {}) {
   await fetchParentRole();
   const diners = await fetchDiners();
   if (!diners.length) throw new Error('Nem található étkező profil.');
-  state.autoScrolled = false;
+  if (!keepActiveDiner) state.autoScrolled = false;
   sessionCache.save();
-  if (state.isParent) {
+
+  const active = keepActiveDiner && state.diner
+    ? diners.find((d) => d.cardId === state.diner.cardId)
+    : null;
+
+  if (state.isParent && !active) {
     state.diner = null;
     state.profile = null;
     DINER_ERROR_EL.hidden = true;
@@ -876,9 +914,12 @@ async function startSession() {
     showView('diner');
     return;
   }
-  setActiveDiner(diners[0]);
+
+  setActiveDiner(active || diners[0]);
   showView('main');
-  await loadWeek(0);
+  await loadWeek(keepActiveDiner ? state.weekOffset : 0, keepActiveDiner, {
+    silent: keepActiveDiner,
+  });
 }
 
 
@@ -989,7 +1030,7 @@ let weekLoadSeq = 0;
 
 /* `dir`: a navigáció iránya (-1 = visszafelé, +1 = előre). Csak az üres hét
    átugrásához kell; ha nincs megadva, a korábbi weekOffsetből számoljuk. */
-async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0 } = {}) {
+async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0, silent = false } = {}) {
   const seq = ++weekLoadSeq;
   const prevOffset = state.weekOffset; // az üres hét átugrásának irányához
   const navDir = dir || (offset >= prevOffset ? 1 : -1);
@@ -1000,7 +1041,7 @@ async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0 } = 
   if (!state.diner) return;
   if (force) state.months = {};
 
-  setStatus('Betöltés…');
+  setStatus(silent ? 'Frissítés…' : 'Betöltés…');
   let months = monthsForWeek(state.weekRange);
   let payloads = [];
   let lastErr = null;
@@ -1063,6 +1104,10 @@ async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0 } = 
 
 async function withBusy(fn) {
   if (state.busy) return;
+  if (state.refreshing) {
+    setStatus('Frissítés folyamatban…');
+    return;
+  }
   if (state.offline || !navigator.onLine) {
     setOffline(true);
     setStatus('Offline módban nem lehet módosítani. Csatlakozz az internethez!');
@@ -1384,26 +1429,46 @@ window.ZipMealLite = {
     if (!document.getElementById('main-view').hidden && !state.busy) renderDays();
   }, 60000);
 
-  if (!navigator.onLine) {
-    setOffline(true);
-    if (store.access && store.refresh) restoreCachedSession();
-    return;
+  const online = navigator.onLine;
+  const hasSession = !!(store.access && store.refresh);
+
+  // Cache-first indulás: ha korábban már be voltunk jelentkezve, azonnal a
+  // mentett étlapot mutatjuk (main view, aktuális hét), nem a login képernyőt.
+  if (hasSession) {
+    state.refreshing = online;
+    const restored = restoreCachedSession({ offline: !online });
+    if (!restored) state.refreshing = false;
   }
 
-  if (store.access && store.refresh) {
-    try {
-      const ok = await refreshTokens(); // induláskor frissít, ha lehet
-      if (!ok && !store.access) return;
-      await startSession();
-    } catch (err) {
-      // Csak hálózati hiba esetén használjuk a cache-elt munkamenetet;
-      // lejárt/érvénytelen token után jelentkezni kell.
-      if (isNetworkError(err) || !navigator.onLine) {
-        if (!restoreCachedSession()) logout();
-      } else {
-        logout();
-      }
+  if (!online) {
+    setOffline(true);
+    return;
+  }
+  if (!hasSession) return;
+
+  if (state.refreshing) {
+    setStatus('Frissítés…');
+    if (state.data) renderDays(); // a kártyák a frissítés alatt letiltva
+  }
+
+  try {
+    const ok = await refreshTokens(); // induláskor frissít, ha lehet
+    if (!ok && !store.access) { logout(); return; }
+    // Cache-elt indulásnál marad a kiválasztott étkező és a heti nézet; a
+    // háttérben force=true-val újratöltjük, és változás esetén újrarenderelünk.
+    await startSession({ keepActiveDiner: state.refreshing });
+  } catch (err) {
+    // Csak hálózati hiba esetén használjuk a cache-elt munkamenetet;
+    // lejárt/érvénytelen token után jelentkezni kell.
+    if (isNetworkError(err) || !navigator.onLine) {
+      if (!restoreCachedSession({ offline: true })) logout();
+    } else {
+      logout();
     }
+  } finally {
+    state.refreshing = false;
+    if (state.data) renderDays();
+    if (!state.offline) setStatus('');
   }
 })();
 
