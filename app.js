@@ -1255,8 +1255,32 @@ let swipeSuppressClick = false;
 let swipeSuppressTimer = 0;
 let daysSnapTimer = 0;
 let weekInTimer = 0;
+let swipeRaf = 0;
+let swipePendingShift = null;
+
+/* A húzás alatti elmozdulást rAF-fal ütemezzük: touchmove akár 120 Hz-en is
+   jöhet, fölösleges minden eseményre újraírt stílust kényszeríteni.
+   A will-change osztály csak a gesztus idejére él, így nem foglal memóriát. */
+function applyDaysShift(shift) {
+  swipePendingShift = shift;
+  if (swipeRaf) return;
+  swipeRaf = requestAnimationFrame(() => {
+    swipeRaf = 0;
+    if (swipePendingShift === null) return;
+    DAYS_EL.style.transform = `translate3d(${swipePendingShift}px, 0, 0)`;
+    swipePendingShift = null;
+  });
+}
+
+function clearSwipeShift() {
+  if (swipeRaf) cancelAnimationFrame(swipeRaf);
+  swipeRaf = 0;
+  swipePendingShift = null;
+  DAYS_EL.classList.remove('days-dragging');
+}
 
 function resetDaysTransform(animate = false) {
+  clearSwipeShift();
   DAYS_EL.classList.toggle('days-snap', animate);
   DAYS_EL.style.transform = '';
   clearTimeout(daysSnapTimer);
@@ -1335,11 +1359,12 @@ DAYS_EL.addEventListener('touchmove', (e) => {
       return;
     }
     swipeIsHorizontal = true;
+    DAYS_EL.classList.add('days-dragging');
   }
 
   if (e.cancelable) e.preventDefault();
   const shift = Math.max(-SWIPE_MAX_SHIFT, Math.min(SWIPE_MAX_SHIFT, dx * 0.55));
-  DAYS_EL.style.transform = `translate3d(${shift}px, 0, 0)`;
+  applyDaysShift(shift);
 }, { passive: false });
 
 DAYS_EL.addEventListener('touchend', endWeekSwipe, { passive: true });

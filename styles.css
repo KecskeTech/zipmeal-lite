@@ -237,6 +237,13 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 /* Keskeny kijelzőn (a „Mai nap”, „Gyermek” és „Kilépés” gombokkal együtt)
    férjen el a fejléc egy sorban. */
 @media (max-width: 640px) {
+  /* A backdrop-filter minden görgetésnél/húzásnál újramintázza az alatta
+     lévő tartalmat; mobilon ez mérhetően rontja az FPS-t, ezért itt kikapcsoljuk. */
+  .topbar {
+    background: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
   .topbar-inner { gap: 8px; padding-top: 8px; padding-bottom: 8px; }
   .topbar .btn.small { padding: 7px 10px; }
   .topbar .btn-icon { margin-right: 4px; }
@@ -282,11 +289,11 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
     z-index: 15;
     width: 44px; height: 44px;
     font-size: 1.55rem;
-    background: rgba(255, 255, 255, .92);
+    background: #fff;
     border: 1px solid rgba(70, 48, 235, .18);
     box-shadow: 0 6px 20px rgba(46, 34, 140, .22);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .week-nav .btn.nav:active { transform: translateY(-50%) scale(.94); }
   #prev-week { left: calc(6px + env(safe-area-inset-left, 0px)); }
@@ -324,6 +331,9 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   padding-bottom: 10px;
   touch-action: pan-y;
 }
+/* Csak a húzás idejére promótáljuk saját compositing layerre: így a
+   translate3d nem kényszerít újrarajzolást minden touchmove-ra. */
+.days.days-dragging { will-change: transform; }
 .days.days-snap { transition: transform .18s ease-out; }
 @keyframes week-in-next {
   from { opacity: .35; transform: translate3d(7%, 0, 0); }
@@ -335,6 +345,9 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 }
 .days.week-in-next { animation: week-in-next .26s ease-out; }
 .days.week-in-prev { animation: week-in-prev .26s ease-out; }
+/* Az új hét becsúszása is compositing layeren fusson, ne rajzolja újra
+   frame-enként a teljes kártyalistát. */
+.days.week-in-next, .days.week-in-prev { will-change: transform, opacity; }
 @media (prefers-reduced-motion: reduce) {
   .days.days-snap { transition: none; }
   .days.week-in-next, .days.week-in-prev { animation: none; }
