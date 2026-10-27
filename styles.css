@@ -278,27 +278,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   display: flex; align-items: center; justify-content: center; gap: 14px;
   margin: 18px 0 16px;
 }
-/* Mobilon a két nyíl a képernyő szélén lebeg, függőlegesen középen, hogy
-   egy kézzel is elérhető legyen, és ne foglaljon helyet a tartalomból.
-   A hét címkéje középen marad, mert a fix elemek kikerülnek a flex sorból. */
-@media (max-width: 640px) {
-  .week-nav .btn.nav {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 15;
-    width: 44px; height: 44px;
-    font-size: 1.55rem;
-    background: #fff;
-    border: 1px solid rgba(70, 48, 235, .18);
-    box-shadow: 0 6px 20px rgba(46, 34, 140, .22);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  .week-nav .btn.nav:active { transform: translateY(-50%) scale(.94); }
-  #prev-week { left: calc(6px + env(safe-area-inset-left, 0px)); }
-  #next-week { right: calc(6px + env(safe-area-inset-right, 0px)); }
-}
 .week-nav-label {
   display: flex; flex-direction: column; align-items: center;
   min-width: 0; text-align: center; line-height: 1.2;
@@ -367,16 +346,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   background: linear-gradient(180deg, rgba(70, 48, 235, .05), transparent 140px);
   border-color: rgba(70, 48, 235, .24);
 }
-.week-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  flex-wrap: wrap; gap: 4px 14px;
-  padding: 2px 6px 12px;
-}
-.week-label {
-  font-weight: 800; font-size: 1.02rem; letter-spacing: -.01em;
-  text-transform: capitalize;
-}
-.week-meta { color: var(--muted); font-size: .78rem; font-weight: 600; }
 .week-days {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
@@ -384,6 +353,41 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   align-items: start;
 }
 @media (max-width: 420px) { .week-days { grid-template-columns: 1fr; } }
+
+/* Mobilon a két nyíl a képernyő szélén lebeg, függőlegesen középen, hogy
+   egy kézzel is elérhető legyen, és ne foglaljon helyet a tartalomból.
+   A hét címkéje középen marad, mert a fix elemek kikerülnek a flex sorból. */
+@media (max-width: 640px) {
+  .week-nav { margin: 4px 0 8px; }
+  .week-nav .btn.nav {
+    position: fixed;
+    /* A dinamikus böngésző-eszköztár miatt a sima `50%` minden
+       megjelenítéskor elmozdítaná a nyilakat. Az `svh` a legkisebb
+       (eszköztárral számolt) viewport, ezért fix pixelértéket ad. */
+    top: calc(50vh - 22px);
+    top: calc(50svh - 22px);
+    transform: none;
+    z-index: 15;
+    width: 44px; height: 44px;
+    font-size: 1.55rem;
+    background: #fff;
+    border: 1px solid rgba(70, 48, 235, .18);
+    box-shadow: 0 6px 20px rgba(46, 34, 140, .22);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .week-nav .btn.nav:active { transform: scale(.94); }
+  #prev-week { left: calc(6px + env(safe-area-inset-left, 0px)); }
+  #next-week { right: calc(6px + env(safe-area-inset-right, 0px)); }
+  .week-nav-label { line-height: 1.05; }
+  .week-nav-label b { font-size: 1.05rem; }
+  .week-nav-label small { font-size: .78rem; }
+  .week-group {
+    margin: 0 0 14px;
+    padding: 10px 10px 12px;
+    border-radius: calc(var(--radius) + 2px);
+  }
+}
 
 /* A napok kártyái fehér alapon, határozottabb körvonallal és vastagabb
    árnyékkal válnak el a világos oldalháttértől. */

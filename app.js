@@ -860,16 +860,8 @@ function renderDays() {
 
   const today = todayIso();
   const current = today >= range.monday && today <= range.sunday;
-  // A heti összesítő csak a rendeléssel rendelkező napokat számolja,
-  // így a reggeli/vacsora nélküli napok nem rontják az "x/y ebéd" arányt.
-  const orderDays = days.filter((d) => d.order);
-  const chosen = orderDays.filter((d) => d.order.menuMeal?.chosen && !d.order.cancelDate).length;
   DAYS_EL.innerHTML = `
     <section class="week-group${current ? ' week-current' : ''}" data-week-offset="${state.weekOffset}">
-      <header class="week-head">
-        <span class="week-label">${current ? 'Ez a hét' : 'Kiválasztott hét'}</span>
-        <span class="week-meta">${chosen}/${orderDays.length} ebéd kiválasztva</span>
-      </header>
       <div class="week-days">
         ${days.map((day) => renderDayCard(day, today)).join('')}
       </div>
