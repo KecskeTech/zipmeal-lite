@@ -120,8 +120,11 @@ kivágáshoz a magyar feliratot használja) – ne írd át ASCII-ra.
   (`ensureMonthPayload`), összefűzés (`mergeWeekData`), majd ha `skipEmpty` és a
   **megjelenítendő adatban** nincs étel (`dataHasMeals`) → `findMealWeek(offset, dir)`
   megkeresi az első ételes hetet (max 52 hét).
-- A nyilak a `navigateWeek(dir)`-en át hívják (dir = -1 / +1, `skipEmpty: true`);
-  a többi hívás (bejelentkezés, módosítás utáni frissítés, online visszatérés) nem ugrik.
+- A nyilak a `navigateWeek(dir)`-en át hívják (dir = -1 / +1, `skipEmpty: true`).
+- Induláskor (bejelentkezés, étkezőváltás, „Mai nap”, online visszatérés, offline
+  cache-ből való betöltés) is `skipEmpty: true, dir: 1` fut, hogy ha az aktuális hét
+  üres (szünet), egyből a következő ételes hét jelenjen meg. A módosítás utáni
+  frissítés nem ugrik.
 - Ha a keresett irányban nincs ételes hét (pl. a nyár elején), `findMealWeek` `null`-t
   ad: ilyenkor **nem lépünk sehova**, a legutóbbi ételes hét marad (és `stayPinned`
   miatt ugyanabba az irányba a további kattintások sem próbálkoznak újra).

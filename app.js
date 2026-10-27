@@ -376,16 +376,37 @@ function setActiveDiner(me) {
    betöltött étlap azonnal látszik, a frissítés a háttérben fut. */
 function loadCachedWeek(offset = 0) {
   if (!state.diner) return false;
-  const range = weekRangeForOffset(offset);
-  const payloads = monthsForWeek(range)
+  let range = weekRangeForOffset(offset);
+  let payloads = monthsForWeek(range)
     .map((key) => cachedPayloadForMonth(key))
     .filter(Boolean);
   if (!payloads.length) return false;
 
+  let data = mergeWeekData(payloads);
+  // Nyitáskor az aktuális hét üres lehet (pl. szünet): ilyenkor a cache-ből
+  // is előre lépünk az első ételes hétre, hogy ne üres étlap fogadjon.
+  if (offset === 0 && !dataHasMeals(range, data)) {
+    for (let step = 1; step <= WEEK_SKIP_LIMIT; step++) {
+      const nextRange = weekRangeForOffset(step);
+      const nextPayloads = monthsForWeek(nextRange)
+        .map((key) => cachedPayloadForMonth(key))
+        .filter(Boolean);
+      if (!nextPayloads.length) break;
+      const nextData = mergeWeekData(nextPayloads);
+      if (dataHasMeals(nextRange, nextData)) {
+        offset = step;
+        range = nextRange;
+        payloads = nextPayloads;
+        data = nextData;
+        break;
+      }
+    }
+  }
+
   state.weekOffset = offset;
   state.weekRange = range;
   state.autoScrolled = false;
-  state.data = mergeWeekData(payloads);
+  state.data = data;
   state.dataNext = null;
   if (dataHasMeals(range, state.data)) state.lastMealWeek = offset;
   renderDays();
@@ -412,7 +433,7 @@ function restoreCachedSession({ offline = true } = {}) {
     if (loadCachedWeek(0)) return true;
     // Nincs mentett havi adat: ilyenkor offline a hálózat nélküli út
     // próbálkozik, online pedig a háttér-frissítés tölti be.
-    if (offline) loadWeek(0);
+    if (offline) loadWeek(0, false, { skipEmpty: true, dir: 1 });
     return true;
   }
 
@@ -889,7 +910,7 @@ async function chooseDiner(cardId) {
   state.dataNext = null;
   state.autoScrolled = false;
   showView('main');
-  await loadWeek(0);
+  await loadWeek(0, false, { skipEmpty: true, dir: 1 });
 }
 
 /* Bejelentkezés / munkamenet indítása: szülőnél előbb étkezőt választunk.
@@ -918,6 +939,8 @@ async function startSession({ keepActiveDiner = false } = {}) {
   setActiveDiner(active || diners[0]);
   showView('main');
   await loadWeek(keepActiveDiner ? state.weekOffset : 0, keepActiveDiner, {
+    skipEmpty: true,
+    dir: 1,
     silent: keepActiveDiner,
   });
 }
@@ -1337,7 +1360,7 @@ async function jumpToToday() {
   state.stayPinned = false;
   pinDir = 0;
   state.autoScrolled = false;
-  await loadWeek(0);
+  await loadWeek(0, false, { skipEmpty: true, dir: 1 });
   const today = todayIso();
   const cards = Array.from(DAYS_EL.querySelectorAll('.day-card'));
   const target = cards.find((el) => el.dataset.date === today) ||
@@ -1377,7 +1400,7 @@ async function handleOnline() {
       if (!ok && !store.access) { logout(); return; }
     }
     if (state.diner) {
-      await loadWeek(state.weekOffset, true);
+      await loadWeek(state.weekOffset, true, { skipEmpty: true, dir: 1 });
     } else {
       await startSession();
     }
