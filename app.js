@@ -56,13 +56,13 @@ const cache = {
 
 function monthCacheKey(cardId, target) { return 'month_' + cardId + '_' + target; }
 
-function saveMonthCache(target) {
-  if (!state.diner?.cardId || !state.data) return;
+function saveMonthCache(target, payload) {
+  if (!state.diner?.cardId || !payload?.data) return;
   cache.set(monthCacheKey(state.diner.cardId, target), {
     // A mealDict is kell az offline módhoz, különben a reggeli/vacsora
     // étkezés-típus nem azonosítható a cache-elt menüből.
-    data: state.data,
-    dataNext: state.dataNext || null,
+    data: payload.data,
+    dataNext: payload.dataNext || null,
   });
 }
 
@@ -410,6 +410,7 @@ function loadCachedWeek(offset = 0) {
   state.dataNext = null;
   if (dataHasMeals(range, state.data)) state.lastMealWeek = offset;
   renderDays();
+  prefetchNeighborWeeks(offset);
   return true;
 }
 
@@ -498,31 +499,27 @@ async function fetchMonth(offset) {
       const chunks = [r, r && r.ordersNext].filter(Boolean);
       const hit = chunks.find((m) => monthHasData(m, target));
       if (hit) {
-        state.data = hit;
-        state.dataNext = chunks.find((m) => m !== hit) || null;
-        saveMonthCache(target);
+        const payload = { data: hit, dataNext: chunks.find((m) => m !== hit) || null };
+        saveMonthCache(target, payload);
         setOffline(false);
-        return { data: hit, dataNext: state.dataNext };
+        return payload;
       }
       if (!fallback && chunks.some((m) => m.menu || m.orders)) fallback = r;
     }
     if (fallback) {
       // válasz jött, csak a kért hónaphoz nincs menü -> "Nincs menü ebben a hónapban"
-      state.data = fallback;
-      state.dataNext = fallback.ordersNext || null;
-      saveMonthCache(target);
+      const payload = { data: fallback, dataNext: fallback.ordersNext || null };
+      saveMonthCache(target, payload);
       setOffline(false);
-      return { data: fallback, dataNext: state.dataNext };
+      return payload;
     }
     throw lastErr || new Error('Nem sikerült betölteni a menüt.');
   } catch (err) {
     // Hálózati hiba / offline: a korábban lekért havi adatokból dolgozunk.
     const cached = loadMonthCache(target);
     if (cached?.data && isNetworkError(err)) {
-      state.data = cached.data;
-      state.dataNext = cached.dataNext || null;
       setOffline(true);
-      return { data: cached.data, dataNext: state.dataNext };
+      return { data: cached.data, dataNext: cached.dataNext || null };
     }
     if (!navigator.onLine) {
       throw new Error('Nincs becsült adat erre a hónapra offline módban.');
@@ -939,14 +936,50 @@ async function startSession({ keepActiveDiner = false } = {}) {
 
 
 /* ---------- orchestration ---------- */
+/* Folyamatban lévő hónap-kérések: így az előtöltés és a hétváltás ugyanazt a
+   kérést használja, nem indít kettőt ugyanarra a hónapra. */
+const monthPrefetch = new Map();
+
 /* Egy hónap adatainak biztosítása. A hétváltásnál csak akkor kérünk újra,
    ha még nincs a memória-cache-ben (vagy módosítás után force=true). */
 async function ensureMonthPayload(key, force = false) {
   if (!force && state.months[key]) return state.months[key];
-  const payload = await fetchMonth(monthOffsetForKey(key));
-  const normalized = { data: payload?.data || null, dataNext: payload?.dataNext || null };
-  state.months[key] = normalized;
-  return normalized;
+  if (force) {
+    const pending = monthPrefetch.get(key);
+    if (pending) {
+      try { await pending; } catch (_) { /* a friss kérés úgyis felülírja */ }
+    }
+  } else {
+    const pending = monthPrefetch.get(key);
+    if (pending) return pending;
+  }
+  const promise = fetchMonth(monthOffsetForKey(key)).then((payload) => {
+    const normalized = { data: payload?.data || null, dataNext: payload?.dataNext || null };
+    state.months[key] = normalized;
+    return normalized;
+  });
+  monthPrefetch.set(key, promise);
+  try {
+    return await promise;
+  } finally {
+    if (monthPrefetch.get(key) === promise) monthPrefetch.delete(key);
+  }
+}
+
+/* A szomszédos hetek hónapjainak előtöltése a háttérben, hogy a hónaphatáron
+   átnyúló hétre lépés ne várjon hálózatra. Csak a még nem cache-elt hónapokat
+   kéri le, és a hibákat csendben elnyeli (a normál betöltés majd jelzi). */
+function prefetchNeighborWeeks(offset) {
+  if (state.offline || !navigator.onLine) return;
+  const keys = new Set();
+  for (const step of [-1, 1]) {
+    for (const key of monthsForWeek(weekRangeForOffset(offset + step))) {
+      if (!state.months[key] && !monthPrefetch.has(key)) keys.add(key);
+    }
+  }
+  for (const key of keys) {
+    ensureMonthPayload(key).catch(() => {});
+  }
 }
 
 /* A hét napjaihoz szükséges hónapok válaszainak összefűzése. A hónaphatáron
@@ -1144,6 +1177,7 @@ async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0, sil
   if (dataHasMeals(targetRange, data)) state.lastMealWeek = offset;
   renderDays();
   setStatus(lastErr ? 'Figyelem: ehhez a hétre csak részleges adat érhető el.' : '');
+  prefetchNeighborWeeks(offset);
 }
 
 async function withBusy(fn) {

@@ -20,6 +20,11 @@
 - `findMealWeek` azonnal `null`-t ad, ha a vizsgált hét utolsó hónapjára a szerver
   egyáltalán nem adott adatot (a válasz csak egy korábbi hónapot ismétel), mert a
   további hetek sem lesznek elérhetők – így nem fut végig hiába 52 héten.
+- Kirajzolás után `prefetchNeighborWeeks(offset)` a háttérben lekéri az előző és a
+  következő hét olyan hónapjait, amelyek még nincsenek a memória-cache-ben. Így a
+  hónaphatáron átnyúló hétre (pl. november → december) lépés nem vár hálózatra.
+  A folyamatban lévő kéréseket a `monthPrefetch` Map deduplikálja, az előtöltés
+  hibáit csendben elnyeli, offline módban pedig nem indul.
 - Mobilon a `#days` területen **vízszintes swipe** is navigál: balra húzás →
   következő hét, jobbra → előző hét (`touchstart`/`touchmove`/`touchend`, csak
   egyértelműen vízszintes mozdulatnál; a függőleges görgetést nem fogja el).
