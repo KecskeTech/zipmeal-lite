@@ -963,6 +963,22 @@ const prefetchMisses = new Set();
    tényleges betöltés ezeket kihagyja, így nem küldi el ugyanazt kétszer. */
 const attemptedBodies = new Map();
 
+/* Egy már betöltött hónap-payload adatblokkjában (tipikusan az előző hónap
+   válaszának `dataNext`-jében) megkeresi a kért hónap menüjét. A szerver a
+   következő hónapot gyakran már a mostani válaszban elküldi; ilyenkor nincs
+   szükség újabb orders kérésre. */
+function cachedMonthChunk(key) {
+  for (const payload of Object.values(state.months)) {
+    for (const chunk of [payload?.data, payload?.dataNext]) {
+      if (!chunk) continue;
+      const hasMenu = (chunk.menu || []).some((m) =>
+        dayIso(m.mealDate).slice(0, 7).replace('-', '') === key);
+      if (hasMenu) return chunk;
+    }
+  }
+  return null;
+}
+
 /* Egy hónap adatainak biztosítása. A hétváltásnál csak akkor kérünk újra,
    ha még nincs a memória-cache-ben (vagy módosítás után force=true). */
 async function ensureMonthPayload(key, force = false) {
@@ -970,6 +986,16 @@ async function ensureMonthPayload(key, force = false) {
   if (force) {
     prefetchMisses.delete(key);
     attemptedBodies.delete(key);
+  }
+  // A szomszédos hónap adata már itt lehet egy korábbi payload dataNext-jében:
+  // ilyenkor hálózat nélkül kiszolgáljuk (ez teszi azonnalivá a hónaphatárt).
+  if (!force) {
+    const chunk = cachedMonthChunk(key);
+    if (chunk) {
+      const derived = { data: chunk, dataNext: null };
+      state.months[key] = derived;
+      return derived;
+    }
   }
   const pending = monthPrefetch.get(key);
   if (pending) {
@@ -999,6 +1025,13 @@ async function ensureMonthPayload(key, force = false) {
    "még nincs adat" eredményt nem cache-eli (lásd fetchMonth probe). */
 function prefetchMonthPayload(key) {
   if (state.months[key] || prefetchMisses.has(key) || monthPrefetch.has(key)) return;
+  // Ha egy korábbi hónap válasza már tartalmazza ezt a hónapot, nincs mit
+  // lekérni: a hétváltás úgyis ebből a blokkból dolgozik majd.
+  const chunk = cachedMonthChunk(key);
+  if (chunk) {
+    state.months[key] = { data: chunk, dataNext: null };
+    return;
+  }
   const promise = fetchMonth(monthOffsetForKey(key), { probe: true }).then((payload) => {
     if (!payload) {
       prefetchMisses.add(key); // még nem elérhető: ne kérdezzük újra folyton
