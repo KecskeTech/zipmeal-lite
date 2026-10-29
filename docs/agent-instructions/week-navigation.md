@@ -30,12 +30,13 @@
   megtalálja, a `state.months[key]` cache-be átemeli, és **nem indul új orders
   kérés**. Ez teszi azonnalivá a 48. → 49. hét lépést (novemberi válasz
   `ordersNext`-jében ott a decemberi menü).
-- Az előtöltés `fetchMonth(..., { probe: true })`-dal csak a **kanonikus** orders
-  kérést küldi el (startMonth = előző hónap, advance = 1), nem próbálja végig a
-  három stratégiát. Ha abban nincs benne a hónap, az `prefetchMisses`-be kerül
-  (a session során nem kérdezzük újra), a kipróbált body pedig az
-  `attemptedBodies`-ba, így a tényleges hétváltás a maradék stratégiákkal
-  próbálkozik, ugyanazt a kérést nem küldi el kétszer.
+- Az előtöltés ugyanazt a teljes `fetchMonth` stratégiát futtatja, mint a
+  normál betöltés, és az eredményt (a "nincs még menü" fallbacket is) a
+  `state.months` cache-be teszi. Így a hétváltás vagy a folyamatban lévő
+  kérést várja meg (`monthPrefetch`), vagy 0 kéréssel renderel. A probe
+  megközelítést azért nem használjuk, mert a szerver a kért hónapot nem
+  feltétlenül a kanonikus (`startMonth = előző hónap, advance = 1`) kérésre adja
+  vissza; a rövidített próba emiatt nem cache-elt, és a hétváltás újra kért.
 - Mobilon a `#days` területen **vízszintes swipe** is navigál: balra húzás →
   következő hét, jobbra → előző hét (`touchstart`/`touchmove`/`touchend`, csak
   egyértelműen vízszintes mozdulatnál; a függőleges görgetést nem fogja el).
