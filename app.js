@@ -486,6 +486,10 @@ async function fetchMonth(offset, { probe = false } = {}) {
   // fölösleges kéréseket jelentene.
   const bodies = probe ? allBodies.slice(0, 1) : allBodies;
   const seen = new Set();
+  // Előtöltéskor már kipróbált (és a kért hónapot nem tartalmazó) kéréseket a
+  // tényleges betöltés ne ismételje meg.
+  const attempted = attemptedBodies.get(target);
+  const responded = new Set();
   let fallback = null;
   let lastErr = null;
   try {
@@ -493,6 +497,7 @@ async function fetchMonth(offset, { probe = false } = {}) {
       const key = JSON.stringify(body);
       if (seen.has(key)) continue;
       seen.add(key);
+      if (!probe && attempted?.has(key)) continue;
       let r;
       try {
         r = unwrap(await api('/users/orders', { method: 'POST', body }));
@@ -500,6 +505,7 @@ async function fetchMonth(offset, { probe = false } = {}) {
         lastErr = e;
         continue;
       }
+      responded.add(key);
       const chunks = [r, r && r.ordersNext].filter(Boolean);
       const hit = chunks.find((m) => monthHasData(m, target));
       if (hit) {
@@ -512,7 +518,11 @@ async function fetchMonth(offset, { probe = false } = {}) {
     }
     // Előtöltésnél a "nincs még adat" választ nem cache-eljük: így a tényleges
     // hétváltás a teljes stratégiával újrapróbálhatja, amikor már elérhető.
-    if (probe) return null;
+    if (probe) {
+      if (!responded.size) throw lastErr || new Error('Nem sikerült betölteni a menüt.');
+      attemptedBodies.set(target, responded);
+      return null;
+    }
     if (fallback) {
       // válasz jött, csak a kért hónaphoz nincs menü -> "Nincs menü ebben a hónapban"
       const payload = { data: fallback, dataNext: fallback.ordersNext || null };
@@ -949,12 +959,18 @@ const monthPrefetch = new Map();
 /* Előtöltéskor "nincs még adat" választ kapott hónapok. Ezekre a session során
    nem próbálkozunk újra; frissítéskor (force) ürül a halmaz. */
 const prefetchMisses = new Set();
+/* Hónaponként az előtöltéskor már kipróbált orders-kérések (body JSON). A
+   tényleges betöltés ezeket kihagyja, így nem küldi el ugyanazt kétszer. */
+const attemptedBodies = new Map();
 
 /* Egy hónap adatainak biztosítása. A hétváltásnál csak akkor kérünk újra,
    ha még nincs a memória-cache-ben (vagy módosítás után force=true). */
 async function ensureMonthPayload(key, force = false) {
   if (!force && state.months[key]) return state.months[key];
-  if (force) prefetchMisses.delete(key);
+  if (force) {
+    prefetchMisses.delete(key);
+    attemptedBodies.delete(key);
+  }
   const pending = monthPrefetch.get(key);
   if (pending) {
     let payload = null;

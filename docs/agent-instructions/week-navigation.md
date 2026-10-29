@@ -28,8 +28,9 @@
 - Az előtöltés `fetchMonth(..., { probe: true })`-dal csak a **kanonikus** orders
   kérést küldi el (startMonth = előző hónap, advance = 1), nem próbálja végig a
   három stratégiát. Ha abban nincs benne a hónap, az `prefetchMisses`-be kerül
-  (a session során nem kérdezzük újra), és a "nincs adat" választ nem cache-eljük,
-  így a tényleges hétváltás a teljes stratégiával újrapróbálhat.
+  (a session során nem kérdezzük újra), a kipróbált body pedig az
+  `attemptedBodies`-ba, így a tényleges hétváltás a maradék stratégiákkal
+  próbálkozik, ugyanazt a kérést nem küldi el kétszer.
 - Mobilon a `#days` területen **vízszintes swipe** is navigál: balra húzás →
   következő hét, jobbra → előző hét (`touchstart`/`touchmove`/`touchend`, csak
   egyértelműen vízszintes mozdulatnál; a függőleges görgetést nem fogja el).
