@@ -13,6 +13,13 @@
 - Ha a keresett irányban nincs ételes hét (pl. a nyár elején), `findMealWeek` `null`-t
   ad: ilyenkor **nem lépünk sehova**, a legutóbbi ételes hét marad (és `stayPinned`
   miatt ugyanabba az irányba a további kattintások sem próbálkoznak újra).
+- `state.weekOffset` **csak akkor** íródik át, amikor a hét tényleg kirajzolásra kerül.
+  Így egy nem elérhető (jövőbeli) hétre lépés nem hagy „szellem” offsetet maga után:
+  a visszalépéshez nem kell kétszer nyomni a balra nyilat, és a betöltés közbeni
+  kattintás is a megjelenített hétből számol.
+- `findMealWeek` azonnal `null`-t ad, ha a vizsgált hét utolsó hónapjára a szerver
+  egyáltalán nem adott adatot (a válasz csak egy korábbi hónapot ismétel), mert a
+  további hetek sem lesznek elérhetők – így nem fut végig hiába 52 héten.
 - Mobilon a `#days` területen **vízszintes swipe** is navigál: balra húzás →
   következő hét, jobbra → előző hét (`touchstart`/`touchmove`/`touchend`, csak
   egyértelműen vízszintes mozdulatnál; a függőleges görgetést nem fogja el).

@@ -1037,6 +1037,14 @@ async function findMealWeek(startOffset, dir, force = false) {
     // hálózati hiba vagy üres válasz: ne ugorjunk tovább
     if (!payloads.length) return null;
     if (weekHasMeals(range, payloads)) return offset;
+    // Ha a hét (utolsó) hónapjára a szerver egyáltalán nem adott adatot, akkor
+    // a válasz csak egy korábbi hónap tartalmát ismétli: a további hetek sem
+    // lesznek elérhetők, ezért ne pörgessünk végig hiába 52 hetet.
+    const keys = monthsForWeek(range);
+    const lastKey = keys[keys.length - 1];
+    const hasMonthData = payloads.some((p) =>
+      monthHasData(p?.data, lastKey) || monthHasData(p?.dataNext, lastKey));
+    if (!hasMonthData) return null;
   }
   return null;
 }
@@ -1047,18 +1055,16 @@ let weekLoadSeq = 0;
    átugrásához kell; ha nincs megadva, a korábbi weekOffsetből számoljuk. */
 async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0, silent = false } = {}) {
   const seq = ++weekLoadSeq;
-  const prevOffset = state.weekOffset; // az üres hét átugrásának irányához
-  const navDir = dir || (offset >= prevOffset ? 1 : -1);
-  state.weekOffset = offset;
-  state.weekRange = weekRangeForOffset(offset);
-  state.autoScrolled = state.autoScrolled && offset === 0;
+  const fromOffset = state.weekOffset; // a jelenleg megjelenített hét
+  const navDir = dir || (offset >= fromOffset ? 1 : -1);
+  const targetRange = weekRangeForOffset(offset);
 
   if (!state.diner) return;
   if (force) state.months = {};
 
   setStatus(silent ? 'Frissítés…' : 'Betöltés…');
-  let months = monthsForWeek(state.weekRange);
-  let payloads = [];
+  const months = monthsForWeek(targetRange);
+  const payloads = [];
   let lastErr = null;
 
   for (const key of months) {
@@ -1072,7 +1078,19 @@ async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0, sil
   // Közben másik hétre navigált a felhasználó: a régi választ eldobjuk.
   if (seq !== weekLoadSeq) return;
 
+  // FONTOS: a weekOffset csak akkor íródik át, amikor a hét tényleg kirajzolásra
+  // kerül. Különben egy nem elérhető (jövőbeli) hétre lépve a nyilak a "szellem"
+  // offsetből számolnának, és a visszalépéshez két kattintás kellene.
   if (!payloads.length) {
+    if (skipEmpty && state.data) {
+      // Az étlap erre az időszakra még nem érhető el: maradunk a megjelenített
+      // héten, és ugyanabba az irányba nem próbálkozunk újra.
+      state.stayPinned = true;
+      setStatus('');
+      return;
+    }
+    state.weekOffset = offset;
+    state.weekRange = targetRange;
     state.data = null;
     state.dataNext = null;
     setStatus('Hiba: ' + (lastErr?.message || 'Nem sikerült betölteni a menüt.'));
@@ -1085,7 +1103,7 @@ async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0, sil
   // Nyilakkal való navigációnál az üres (szünet) heteket teljesen átugorjuk.
   // Itt a ténylegesen megjelenítendő adatból döntünk (dataHasMeals), mert a
   // hónap-payload más hónapokat is tartalmaz, amiből félre lehetne vezetni.
-  if (skipEmpty && !dataHasMeals(state.weekRange, data)) {
+  if (skipEmpty && !dataHasMeals(targetRange, data)) {
     const target = await findMealWeek(offset, navDir, force);
     if (seq !== weekLoadSeq) return;
     if (target !== null && target !== offset) {
@@ -1094,25 +1112,36 @@ async function loadWeek(offset, force = false, { skipEmpty = false, dir = 0, sil
       await loadWeek(target, force, { dir: navDir });
       return;
     }
-    // Nincs a közelben ételes hét ebben az irányban (pl. a nyár elején).
+    // Nincs a közelben ételes hét ebben az irányban (pl. a nyár elején, vagy
+    // mert a további időszak étlapja még nem elérhető).
     // Ilyenkor nem lépünk sehova: az ételes hét marad a képernyőn, és a
     // további kattintásokra sem próbálkozunk újra (stayPinned), amíg a
     // felhasználó az ellenkező irányba nem indul.
     state.stayPinned = true;
     let keep = state.lastMealWeek;
     if (keep === null || keep === undefined || keep === offset) {
-      keep = (await findMealWeek(0, 1, force)) ?? 0; // a mai héttől előre az első ételes
+      keep = (await findMealWeek(0, 1, force)) ?? fromOffset; // a mai héttől előre az első ételes
       if (seq !== weekLoadSeq) return;
     }
-    if (keep !== offset) {
+    if (keep !== fromOffset) {
       await loadWeek(keep, force, { dir: navDir });
       return;
     }
+    // Már a megfelelő hét van a képernyőn: nem mozdulunk.
+    if (state.data) {
+      setStatus('');
+      return;
+    }
+    // Még nincs kirajzolt adat (pl. induláskor minden hét üres): az üres hét
+    // adatait rajzoljuk ki, hogy ne maradjon üres a felület.
   }
 
+  state.weekOffset = offset;
+  state.weekRange = targetRange;
+  state.autoScrolled = state.autoScrolled && offset === 0;
   state.data = data;
   state.dataNext = null;
-  if (dataHasMeals(state.weekRange, data)) state.lastMealWeek = offset;
+  if (dataHasMeals(targetRange, data)) state.lastMealWeek = offset;
   renderDays();
   setStatus(lastErr ? 'Figyelem: ehhez a hétre csak részleges adat érhető el.' : '');
 }
