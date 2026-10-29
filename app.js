@@ -474,13 +474,17 @@ function monthHasData(m, target) {
    a kért hónap az ordersNext-ben van, vagy a startMonth = kért hónap, advance nélküli
    kérés működik. Ezért több stratégiával kérünk, és azt a blokkot használjuk,
    amelyik tényleg a kért hónap adatait tartalmazza. */
-async function fetchMonth(offset) {
+async function fetchMonth(offset, { probe = false } = {}) {
   const target = monthKey(offset);
-  const bodies = [
+  const allBodies = [
     { cardId: state.diner.cardId, startMonth: monthKey(offset - 1), advance: 1 },
     { cardId: state.diner.cardId, startMonth: target },
     { cardId: state.diner.cardId, startMonth: monthKey(Math.max(offset, 0)), advance: offset },
   ];
+  // Előtöltésnél (probe) csak a kanonikus kérést küldjük el: ha abban nincs
+  // benne a hónap, akkor az még nem elérhető, a többi stratégia csak
+  // fölösleges kéréseket jelentene.
+  const bodies = probe ? allBodies.slice(0, 1) : allBodies;
   const seen = new Set();
   let fallback = null;
   let lastErr = null;
@@ -506,6 +510,9 @@ async function fetchMonth(offset) {
       }
       if (!fallback && chunks.some((m) => m.menu || m.orders)) fallback = r;
     }
+    // Előtöltésnél a "nincs még adat" választ nem cache-eljük: így a tényleges
+    // hétváltás a teljes stratégiával újrapróbálhatja, amikor már elérhető.
+    if (probe) return null;
     if (fallback) {
       // válasz jött, csak a kért hónaphoz nincs menü -> "Nincs menü ebben a hónapban"
       const payload = { data: fallback, dataNext: fallback.ordersNext || null };
@@ -939,23 +946,29 @@ async function startSession({ keepActiveDiner = false } = {}) {
 /* Folyamatban lévő hónap-kérések: így az előtöltés és a hétváltás ugyanazt a
    kérést használja, nem indít kettőt ugyanarra a hónapra. */
 const monthPrefetch = new Map();
+/* Előtöltéskor "nincs még adat" választ kapott hónapok. Ezekre a session során
+   nem próbálkozunk újra; frissítéskor (force) ürül a halmaz. */
+const prefetchMisses = new Set();
 
 /* Egy hónap adatainak biztosítása. A hétváltásnál csak akkor kérünk újra,
    ha még nincs a memória-cache-ben (vagy módosítás után force=true). */
 async function ensureMonthPayload(key, force = false) {
   if (!force && state.months[key]) return state.months[key];
-  if (force) {
-    const pending = monthPrefetch.get(key);
-    if (pending) {
-      try { await pending; } catch (_) { /* a friss kérés úgyis felülírja */ }
-    }
-  } else {
-    const pending = monthPrefetch.get(key);
-    if (pending) return pending;
+  if (force) prefetchMisses.delete(key);
+  const pending = monthPrefetch.get(key);
+  if (pending) {
+    let payload = null;
+    try { payload = await pending; } catch (_) { /* lent teljes lekérés */ }
+    // Az előtöltés (probe) talált adatot: használhatjuk.
+    if (!force && payload) return payload;
+    // A probe nem talált adatot (null), vagy frissítés kell: jöhet a teljes
+    // stratégia. Ha közben más már betöltötte, azt használjuk.
+    if (!force && state.months[key]) return state.months[key];
   }
   const promise = fetchMonth(monthOffsetForKey(key)).then((payload) => {
     const normalized = { data: payload?.data || null, dataNext: payload?.dataNext || null };
     state.months[key] = normalized;
+    prefetchMisses.delete(key);
     return normalized;
   });
   monthPrefetch.set(key, promise);
@@ -964,6 +977,27 @@ async function ensureMonthPayload(key, force = false) {
   } finally {
     if (monthPrefetch.get(key) === promise) monthPrefetch.delete(key);
   }
+}
+
+/* Egy hónap előtöltése a háttérben. Csak a kanonikus kérést küldi el, és a
+   "még nincs adat" eredményt nem cache-eli (lásd fetchMonth probe). */
+function prefetchMonthPayload(key) {
+  if (state.months[key] || prefetchMisses.has(key) || monthPrefetch.has(key)) return;
+  const promise = fetchMonth(monthOffsetForKey(key), { probe: true }).then((payload) => {
+    if (!payload) {
+      prefetchMisses.add(key); // még nem elérhető: ne kérdezzük újra folyton
+      return null;
+    }
+    const normalized = { data: payload.data || null, dataNext: payload.dataNext || null };
+    state.months[key] = normalized;
+    return normalized;
+  });
+  monthPrefetch.set(key, promise);
+  const done = () => {
+    if (monthPrefetch.get(key) === promise) monthPrefetch.delete(key);
+  };
+  promise.then(done, done);
+  promise.catch(() => {});
 }
 
 /* A szomszédos hetek hónapjainak előtöltése a háttérben, hogy a hónaphatáron
@@ -977,9 +1011,7 @@ function prefetchNeighborWeeks(offset) {
       if (!state.months[key] && !monthPrefetch.has(key)) keys.add(key);
     }
   }
-  for (const key of keys) {
-    ensureMonthPayload(key).catch(() => {});
-  }
+  for (const key of keys) prefetchMonthPayload(key);
 }
 
 /* A hét napjaihoz szükséges hónapok válaszainak összefűzése. A hónaphatáron

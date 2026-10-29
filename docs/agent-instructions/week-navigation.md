@@ -25,6 +25,11 @@
   hónaphatáron átnyúló hétre (pl. november → december) lépés nem vár hálózatra.
   A folyamatban lévő kéréseket a `monthPrefetch` Map deduplikálja, az előtöltés
   hibáit csendben elnyeli, offline módban pedig nem indul.
+- Az előtöltés `fetchMonth(..., { probe: true })`-dal csak a **kanonikus** orders
+  kérést küldi el (startMonth = előző hónap, advance = 1), nem próbálja végig a
+  három stratégiát. Ha abban nincs benne a hónap, az `prefetchMisses`-be kerül
+  (a session során nem kérdezzük újra), és a "nincs adat" választ nem cache-eljük,
+  így a tényleges hétváltás a teljes stratégiával újrapróbálhat.
 - Mobilon a `#days` területen **vízszintes swipe** is navigál: balra húzás →
   következő hét, jobbra → előző hét (`touchstart`/`touchmove`/`touchend`, csak
   egyértelműen vízszintes mozdulatnál; a függőleges görgetést nem fogja el).

@@ -1,7 +1,7 @@
 // ZipMeal Lite service worker – app shell cache + offline fallback.
 // Az API válaszokat szándékosan NEM cache-eljük itt: az étlapot az app
 // saját localStorage cache-ből jeleníti meg offline módban.
-const CACHE = 'zipmeal-lite-v20';
+const CACHE = 'zipmeal-lite-v21';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.json', './icon.svg', './LICENSE'];
 
 self.addEventListener('install', (e) => {
