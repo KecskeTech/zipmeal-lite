@@ -703,6 +703,7 @@ function showView(name) {
   document.getElementById('login-view').hidden = name !== 'login';
   document.getElementById('diner-view').hidden = name !== 'diner';
   document.getElementById('main-view').hidden = name !== 'main';
+  document.getElementById('seo-block').hidden = name !== 'login';
 }
 
 function setStatus(msg) {

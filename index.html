@@ -4,19 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#4630eb">
-<meta name="description" content="ZipMeal Lite (ziplite.kecske.win) - Nem hivatalos, gyors, offline is használható ZipMeal ebédválasztó PWA. Kezeld az ebédrendelést egyszerűen, reklámok és tracking nélkül.">
-<meta name="keywords" content="zipmeal, zipmeal lite, ziplite, ebédválasztó, ebéd rendelés, menü, iskolai ebéd">
+<meta name="description" content="ZipMeal Lite (ziplite.kecske.win) - Nem hivatalos, gyors, offline is használható ZipMeal ebédválasztó PWA iskolai és közétkeztetéshez. Menza befizetés, iskolai ebéd lemondás, ebéd rendelés egy helyen — reklámok és tracking nélkül.">
+<meta name="keywords" content="zipmeal, zipmeal lite, ziplite, ebédválasztó, ebéd rendelés, menü, iskolai ebéd, iskolai ebéd lemondás, iskolai ebéd rendelés, menza befizetés, menza rendelés, iskolai menza, közétkeztetés, közétkeztetés étlap, óvodai étkezés, iskolai étkezés, étlap, ebéd lemondás, ebédbefizetés, ebéd választás, Budapest, Debrecen, Szeged, Miskolc, Pécs, Győr, Nyíregyháza, Kecskemét, Székesfehérvár, Szombathely, Szolnok, Tatabánya, Kaposvár, Érd, Veszprém, Békéscsaba, Zalaegerszeg, Sopron, Eger, Nagykanizsa, Dunaújváros, Hódmezővásárhely, Salgótarján, Cegléd, Baja, Esztergom">
 <link rel="canonical" href="https://ziplite.kecske.win/">
-<meta property="og:title" content="ZipMeal Lite - Egyszerű és gyors ebédválasztó">
-<meta property="og:description" content="Nem hivatalos, offline is használható ZipMeal ebédválasztó PWA.">
+<meta property="og:title" content="ZipMeal Lite - Iskolai ebéd lemondás és menza befizetés egyszerűen">
+<meta property="og:description" content="Nem hivatalos, offline is használható ZipMeal ebédválasztó PWA iskolai és közétkeztetéshez.">
 <meta property="og:url" content="https://ziplite.kecske.win/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ZipMeal Lite">
 <meta property="og:locale" content="hu_HU">
 <meta property="og:image" content="https://ziplite.kecske.win/icon.svg">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="ZipMeal Lite - Gyors és offline ebédválasztó">
-<meta name="twitter:description" content="Nem hivatalos, offline is használható ZipMeal ebédválasztó PWA.">
+<meta name="twitter:title" content="ZipMeal Lite - Gyors iskolai ebéd lemondás és menza befizetés">
+<meta name="twitter:description" content="Nem hivatalos, offline is használható ZipMeal ebédválasztó PWA iskolai és közétkeztetéshez.">
 <meta name="twitter:image" content="https://ziplite.kecske.win/icon.svg">
 <script type="application/ld+json">
 {
@@ -27,14 +27,48 @@
   "applicationCategory": "UtilityApplication",
   "operatingSystem": "Any",
   "inLanguage": "hu",
-  "description": "Nem hivatalos, gyors, offline is használható ZipMeal ebédválasztó PWA. Reklámok és tracking nélkül.",
+  "description": "Nem hivatalos, gyors, offline is használható ZipMeal ebédválasztó PWA iskolai és közétkeztetéshez. Iskolai ebéd lemondás, menza befizetés és heti étlap egy helyen, reklámok és tracking nélkül.",
+  "keywords": "iskolai ebéd lemondás, menza befizetés, közétkeztetés, ebédválasztó, iskolai étkezés",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "HUF" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "hu",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Hogyan lehet iskolai ebédet lemondani a ZipMeal Lite-tal?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A bejelentkezés és a gyermek (étkező) kiválasztása után a heti étlapon a napkártyán a Lemondás gombra kattintva mondhatod le az ebédet. A lemondás a lemondási határidőig visszavonható."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hol lehet menza befizetést és ebédrendelést kezelni?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A ZipMeal Lite a ZipMeal fiókodhoz kapcsolódva mutatja a heti étlapot, az ebédrendeléseket és a befizetéshez tartozó választásokat. A közétkeztetési szerződés és a tényleges befizetés továbbra is a ZipMeal rendszerében történik."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Működik offline az iskolai étlap?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Igen. A korábban betöltött étlap internet nélkül is megjelenik; ilyenkor csak a választás és a lemondás nem elérhető."
+      }
+    }
+  ]
 }
 </script>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ZipMeal Lite">
-<title>ZipMeal Lite - Gyors és offline ebédválasztó</title>
+<title>ZipMeal Lite - Iskolai ebéd lemondás, menza befizetés és étlap</title>
 <link rel="manifest" href="manifest.json">
 <link rel="license" href="LICENSE">
 <link rel="stylesheet" href="styles.css">
@@ -95,6 +129,39 @@
       </p>
       <p class="login-vibecoded">❗Ez az alkalmazás vibe codeolva van.❗</p>
     </form>
+  </div>
+
+  <!-- SEO / bevezető tartalom – csak kijelentkezve látszik, bejelentkezés után
+       a #main-view váltja. A keresőmotoroknak és az új látogatóknak szól. -->
+  <div id="seo-block" class="view seo-block">
+    <article class="seo-content">
+      <h2>Iskolai ebéd lemondás és menza befizetés egy egyszerű felületen</h2>
+      <p>A ZipMeal Lite a <b>közétkeztetés</b> napi feladatait teszi gyorssá: az
+      iskolai vagy óvodai heti étlapot egy hétre bontva mutatja, és néhány
+      kattintással intézhető az <b>iskolai ebéd lemondás</b>, a lemondás
+      visszavonása, illetve az ebéd kiválasztása. A <b>menza befizetés</b> és az
+      ebédrendelés a ZipMeal fiókhoz kapcsolódik, így a befizetett napok és a
+      rendelt ebédek egy helyen követhetők.</p>
+      <h3>Mit tud a ZipMeal Lite?</h3>
+      <ul class="seo-list">
+        <li><b>Heti étlap</b> reggelivel, ebéddel és vacsorával, a szüneti hetek automatikus átugrásával.</li>
+        <li><b>Iskolai ebéd lemondás</b> a lemondási határidőig, egy gombbal, visszavonhatóan.</li>
+        <li><b>Menza befizetés</b> áttekintése: melyik napra van rendelés, és hol nincs kiválasztás.</li>
+        <li><b>Gyermekválasztás</b> szülői fióknál, testvérek külön kezelése.</li>
+        <li><b>Offline mód</b>: a már betöltött étlap internet nélkül is látható.</li>
+      </ul>
+      <h3>Közétkeztetés – városi étlap gyorsan</h3>
+      <p>A közétkeztetési szolgáltatók (iskolai és óvodai menzák) étlapja a ZipMeal
+      rendszerén keresztül érhető el. A ZipMeal Lite ezt teszi kényelmesebbé a
+      szülők számára a nagyobb városokban, többek között: Budapest, Debrecen,
+      Szeged, Miskolc, Pécs, Győr, Nyíregyháza, Kecskemét, Székesfehérvár,
+      Szombathely, Szolnok, Tatabánya, Kaposvár, Érd, Veszprém, Békéscsaba,
+      Zalaegerszeg, Sopron, Eger, Nagykanizsa és Dunaújváros.</p>
+      <p class="seo-note">A ZipMeal Lite nem hivatalos kliens: nem áll kapcsolatban a
+      ZipMeal szolgáltatással, a bejelentkezési adatok és az étlap a ZipMeal saját
+      rendszeréből származnak. Nyílt forráskódú (AGPL-3.0), reklámok és tracking
+      nélkül.</p>
+    </article>
   </div>
 
   <!-- DINER / CHILD SELECTOR (parent accounts) -->
@@ -163,8 +230,9 @@
       <main id="days" class="days"></main>
       <p id="status" class="toast" hidden></p>
       <footer class="foot">
-        ZipMeal Lite - nem hivatalos kliens · AGPL-3.0 ·
-        <a href="https://github.com/KecskeTech/zipmeal-lite" target="_blank" rel="noopener">forráskód</a>
+        <span>ZipMeal Lite - nem hivatalos kliens · AGPL-3.0 ·
+        <a href="https://github.com/KecskeTech/zipmeal-lite" target="_blank" rel="noopener">forráskód</a></span>
+        <span class="foot-seo">Iskolai ebéd lemondás · menza befizetés · közétkeztetés havi és heti étlap</span>
       </footer>
     </div>
   </div>
