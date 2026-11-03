@@ -1,6 +1,6 @@
-# ZipMeal Lite
+# ZiPMEAL Lite
 
-Nem hivatalos, mobilbarát webes ebédválasztó a ZipMeal API-hoz. Egyetlen statikus
+Nem hivatalos, mobilbarát webes ebédválasztó a ZiPMEAL API-hoz. Egyetlen statikus
 webalkalmazás, backend nélkül.
 
 Az alkalmazás **vibe codeolva** van. A promptokat ember írja, minden mást az AI.
@@ -11,7 +11,7 @@ https://ziplite.kecske.win/
 
 ## Funkciók
 
-- Bejelentkezés ZipMeal-fiókkal (a jelszó kizárólag a ZipMeal szervereire megy, a
+- Bejelentkezés ZiPMEAL-fiókkal (a jelszó kizárólag a ZiPMEAL szervereire megy, a
   bejelentkezés csak a saját eszközön, a böngésző tárolójában marad meg – ezt a
   login képernyő alján egy rövid figyelmeztetés is jelzi)
 - Havi étlap lekérdezése, **egy hétre bontva**: a felső nyilakkal hétre előre/hátra
@@ -72,9 +72,9 @@ A böngésző konzoljából hamis étlap tölthető be, hogy a reggeli/vacsora m
 és a szüneti hetek átugrása kipróbálható legyen:
 
 ```js
-ZipMealLite.demo({ breakfast: true, dinner: true }) // van reggeli és vacsora is
-ZipMealLite.demo({ breakfast: false, dinner: false }) // csak ebéd
-ZipMealLite.clearDemo() // vissza a login képernyőre
+ZiPMEALLite.demo({ breakfast: true, dinner: true }) // van reggeli és vacsora is
+ZiPMEALLite.demo({ breakfast: false, dinner: false }) // csak ebéd
+ZiPMEALLite.clearDemo() // vissza a login képernyőre
 ```
 
 A demó minden harmadik hetet üresnek jelöl, így a nyilakkal való átugrás is

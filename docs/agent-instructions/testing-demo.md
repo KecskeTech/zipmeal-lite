@@ -1,7 +1,7 @@
 # Demó és tesztelés
 
-- `ZipMealLite.demo({breakfast, dinner})` hamis étlapot tölt be (minden 3. hét üres),
-  `ZipMealLite.clearDemo()` visszaállít. `ZipMealLite.debug` a belső segédfüggvényeket adja.
+- `ZiPMEALLite.demo({breakfast, dinner})` hamis étlapot tölt be (minden 3. hét üres),
+  `ZiPMEALLite.clearDemo()` visszaállít. `ZiPMEALLite.debug` a belső segédfüggvényeket adja.
 - jsdom-alapú ellenőrzés: a repón kívül, temp mappában (`npm i jsdom`), a valódi
   `index.html` + `app.js` betöltésével: login disclaimer, csoportok sorrendje,
   „csak ebéd” eset, üres hét átugrása.

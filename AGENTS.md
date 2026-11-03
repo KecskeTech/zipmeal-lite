@@ -1,4 +1,4 @@
-# ZipMeal Lite
+# ZiPMEAL Lite
 
 Egyetlen statikus PWA (vanilla JS, build és csomagkezelő nélkül) a zipmeal.hu
 étkezésrendelés klienséhez, GitHub Pages-en kiszolgálva a

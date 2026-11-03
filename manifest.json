@@ -1,7 +1,7 @@
 {
-  "name": "ZipMeal Lite",
-  "short_name": "ZipMeal",
-  "description": "Nem hivatalos, offline is használható ZipMeal ebédválasztó",
+  "name": "ZiPMEAL Lite",
+  "short_name": "ZiPMEAL",
+  "description": "Nem hivatalos, offline is használható ZiPMEAL ebédválasztó",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -1,4 +1,4 @@
-/* ZipMeal Lite – alternatív zipmeal.hu kliens (PWA)
+/* ZiPMEAL Lite – alternatív zipmeal.hu kliens (PWA)
  *
  * Copyright (C) 2026 KecskeTech
  *
@@ -760,7 +760,7 @@ function mealNameHtml(name) {
     .map((part) => part.trim())
     .filter(Boolean)
     .map(esc)
-    .join('<br>');
+    .join(',<br>');
 }
 
 /* Egy menükártya egy étkezés-csoporton belül (pl. "Ebéd A", "Reggeli").
@@ -1579,7 +1579,7 @@ async function handleOnline() {
 }
 
 /* ---------- fejlesztői demó (bejelentkezés és API nélkül) ----------
-   Böngészőben:  ZipMealLite.demo({ breakfast: true, dinner: true })
+   Böngészőben:  ZiPMEALLite.demo({ breakfast: true, dinner: true })
    A megadott hétre hamis étlapot/rendeléseket tölt be, hogy a reggeli/vacsora
    megjelenítés kipróbálható legyen valódi fiók nélkül. */
 function demoWeekRange(offset, withMeals) {
@@ -1678,7 +1678,7 @@ async function demoLoadWeek(offset = 0, force = false, { skipEmpty = false } = {
   renderDays();
 }
 
-window.ZipMealLite = {
+window.ZiPMEALLite = {
   state,
   // belső segédfüggvények (teszteléshez / hibakereséshez)
   debug: {
