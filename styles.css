@@ -622,6 +622,13 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 @media (max-width: 480px) { .meal-choices { grid-template-columns: 1fr; } }
 
 .meal-choice {
+  /* A <button> alapból függőlegesen középre igazítja a tartalmát; a rácson
+     belül ezért a rövidebb (nem kiválasztott) kártyán felül üres hely
+     keletkezne. Flex oszloppal a tartalom mindig felülre kerül. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
   border: 2px solid var(--line);
   border-radius: 14px;
   padding: 13px;
