@@ -752,6 +752,17 @@ function esc(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+/* Az étel neve vesszővel elválasztott fogásokból áll; ezeket külön sorba
+   tesszük, hogy ne egy hosszú, vesszős sor legyen belőle. */
+function mealNameHtml(name) {
+  return String(name ?? '')
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map(esc)
+    .join('<br>');
+}
+
 /* Egy menükártya egy étkezés-csoporton belül (pl. "Ebéd A", "Reggeli").
    A `group.order` a csoport rendelése; ha nincs (pl. vacsorára nincs
    rendelés, csak menü), a kártya csak megjelenít, választani nem lehet. */
@@ -777,7 +788,7 @@ function mealCard(day, group, meal) {
             data-day="${day.dateKey}" data-group="${group.key}" data-meal="${esc(meal.id || '')}" data-menu="${esc(letter)}"
             title="${esc(reason)}" ${disabled ? 'disabled' : ''}>
       <span class="meal-tag meal-tag-${group.key}">${esc(tag)}</span>
-      <div class="meal-name">${esc(meal.mealName)}</div>
+      <div class="meal-name">${mealNameHtml(meal.mealName)}</div>
       <div class="meal-meta">${meal.energy ? meal.energy + ' kcal' : ''}${allerg ? ' • ' + esc(allerg) : ''}</div>
     </button>`;
 }
