@@ -15,6 +15,20 @@
   egy kézzel is elérhetők és nem foglalnak helyet a tartalomból. Desktopon
   maradnak a hét címkéje mellett, a normál folyamban.
 
+## Téma (sötét / világos)
+
+- A **sötét téma az alapértelmezett** (`<html data-theme="dark">`); a világos
+  témát a `data-theme="light"` kapcsolja be.
+- Minden szín a `:root` design tokenjeiből jön; a világos értékeket a
+  `:root[data-theme="light"]` blokk írja felül. Ne írj bele hardcode-olt
+  világos színt a szabályokba – használd a tokent (pl. `--card`, `--surface-2`,
+  `--text`, `--primary-line`).
+- A választást a fejléchez közeli inline szkript olvassa még a CSS előtt
+  (`zm_theme` a localStorage-ban), így nincs villanás; az `app.js`
+  `initTheme()`/`setTheme()` csak szinkronban tartja a meta `theme-color`-t,
+  a gomb feliratát, és ment.
+- A váltó gomb `#theme-toggle` fixen a jobb alsó sarokban van, minden nézetben.
+
 ## Stílus, amihez igazodj
 
 - Vanilla JS, 2 szóköz, egyszerű idézőjelek, pontosvessző, `const/let`, opcionális

@@ -13,7 +13,7 @@ Egyetlen statikus PWA (nincs build, nincs csomagkezelő): `index.html` + `styles
 | --- | --- |
 | `app.js` | teljes klienslogika: API-hívások, tokenek, heti nézet, renderelés, demó |
 | `index.html` | 3 nézet: `#login-view`, `#diner-view` (szülői gyermekválasztó), `#main-view` |
-| `styles.css` | design tokenek a `:root`-ban (`--primary`, `--bg`, `--card`, `--line`…), BEM-szerű, sima osztálynevek |
+| `styles.css` | design tokenek a `:root`-ban (`--primary`, `--bg`, `--card`, `--line`…), a világos téma felülírása `:root[data-theme="light"]` alatt; BEM-szerű, sima osztálynevek |
 | `sw.js` | app shell cache; az API-t **nem** cache-eli. Ha a HTML/CSS/JS változik, **emeld a `CACHE` verziót** (pl. `zipmeal-lite-v8`) |
 | `CNAME` | `ziplite.kecske.win` |
 | `LICENSE` | AGPL-3.0 (a fejlécet ne töröld a fájlokból) |
@@ -28,6 +28,7 @@ weekRange, busy, refreshing, offline, autoScrolled, demo`.
   frissít (`state.refreshing` alatt a kártyák tiltottak, status: „Frissítés…”).
 
 - Tokenek: `localStorage` (`zm_access`, `zm_refresh`).
+- Téma: `localStorage` `zm_theme` (`dark` az alap, `light` opcionális).
 - Offline cache: `zm_cache_v1_*` (`month_<cardId>_<YYYYMM>` és `session`).
   A cache-elt `data` a `mergeWeekData()` kimenete, tehát a `mealDict`-et is tartalmazza.
 - `logout()` mindent töröl (tokenek + cache), és a login nézetre vált.

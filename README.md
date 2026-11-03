@@ -37,6 +37,8 @@ https://ziplite.kecske.win/
   menü, automatikusan az új étlap jelenik meg.
 - Kiválasztás nélküli napok piros kiemelése
 - Szülői fióknál gyermek kiválasztása belépés után, illetve későbbi váltás
+- **Sötét téma alapértelmezésként**, a jobb alsó sarokban lévő gombbal váltható
+  világosra (a választás megmarad a böngészőben)
 - Telepíthető PWA; offline módban a korábban betöltött étlap a böngésző
   `localStorage` cache-éből jelenik meg (módosítás offline nem lehetséges)
 

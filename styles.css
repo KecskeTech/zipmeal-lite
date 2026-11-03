@@ -1,16 +1,106 @@
+/* Sötét téma az alapértelmezett (a <html data-theme="dark"> miatt); a világos
+   témát a data-theme="light" kapcsolja be. A témát az app.js menti és váltja. */
 :root {
+  color-scheme: dark;
+  --primary: #a294ff;
+  --primary-2: #c3b8ff;
+  --primary-soft: #2a2547;
+  --primary-line: rgba(162, 148, 255, .22);
+  --primary-line-strong: rgba(162, 148, 255, .42);
+  --btn-a: #4630eb;
+  --btn-b: #6d5bff;
+  --on-accent: #17161f;
+  --on-ok: #0b1a12;
+  --ok: #34d089;
+  --danger: #ff6b70;
+  --muted: #a3a5bb;
+  --text: #e9e9f4;
+  --text-strong: #f6f6fb;
+  --bg: #0f0f18;
+  --card: #1b1b27;
+  --surface-2: #20202e;
+  --surface-3: #232333;
+  --line: #2e2e42;
+  --topbar-bg: rgba(15, 15, 24, .82);
+  --nav-surface: #1b1b27;
+  --grad-end: #26263c;
+  --badge-neutral-bg: #2a2a3c;
+  --deadline-text: #cfd0e4;
+  --deadline-bg: #262636;
+  --deadline-expired-bg: #212130;
+  --breakfast-title: #e6b45a;
+  --dinner-title: #b3a5ff;
+  --breakfast-tag: #f3c873;
+  --breakfast-tag-bg: #3a2d12;
+  --dinner-tag: #c9bcff;
+  --dinner-tag-bg: #2e2849;
+  --warn-bg: #3a2e10;
+  --warn-text: #f2c96b;
+  --warn-line: #5c4a1c;
+  --toast-bg: #34344c;
+  --toast-text: #f4f4fb;
+  --glow-a: rgba(124, 102, 255, .16);
+  --glow-b: rgba(124, 102, 255, .10);
+  --day-head-a: rgba(162, 148, 255, .10);
+  --day-head-b: rgba(195, 184, 255, .07);
+  --week-tint: rgba(162, 148, 255, .07);
+  --radius: 18px;
+  --shadow: 0 4px 20px rgba(0, 0, 0, .45);
+  --shadow-lg: 0 14px 40px rgba(0, 0, 0, .55);
+  --card-border: rgba(162, 148, 255, .16);
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, .5), 0 2px 4px rgba(0, 0, 0, .32);
+  --btn-shadow: 0 2px 10px rgba(0, 0, 0, .42);
+  --primary-shadow: 0 6px 18px rgba(70, 48, 235, .45);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
   --primary: #4630eb;
   --primary-2: #6d5bff;
   --primary-soft: #ece9fd;
+  --primary-line: rgba(70, 48, 235, .14);
+  --primary-line-strong: rgba(70, 48, 235, .30);
+  --on-accent: #ffffff;
+  --on-ok: #ffffff;
   --ok: #12a05e;
   --danger: #d9363e;
   --muted: #6d7085;
+  --text: #1d1e2c;
+  --text-strong: #2a2b40;
   --bg: #f2f3fa;
   --card: #ffffff;
+  --surface-2: #fafaff;
+  --surface-3: #f8f8fe;
   --line: #e6e6f2;
-  --radius: 18px;
+  --topbar-bg: rgba(255, 255, 255, .8);
+  --nav-surface: #ffffff;
+  --grad-end: #ffffff;
+  --badge-neutral-bg: #eceef5;
+  --deadline-text: #3d3f56;
+  --deadline-bg: #f1f2f9;
+  --deadline-expired-bg: #f6f6f9;
+  --breakfast-title: #b07a12;
+  --dinner-title: #6b4bb8;
+  --breakfast-tag: #a86a00;
+  --breakfast-tag-bg: #fdf0d5;
+  --dinner-tag: #5b3fb3;
+  --dinner-tag-bg: #eee8ff;
+  --warn-bg: #fff4d6;
+  --warn-text: #7a4b00;
+  --warn-line: #f0d48a;
+  --toast-bg: #26273d;
+  --toast-text: #ffffff;
+  --glow-a: rgba(70, 48, 235, .10);
+  --glow-b: rgba(70, 48, 235, .07);
+  --day-head-a: rgba(70, 48, 235, .06);
+  --day-head-b: rgba(109, 91, 255, .10);
+  --week-tint: rgba(70, 48, 235, .05);
   --shadow: 0 4px 20px rgba(46, 34, 140, .09);
   --shadow-lg: 0 14px 40px rgba(46, 34, 140, .16);
+  --card-border: rgba(70, 48, 235, .16);
+  --card-shadow: 0 8px 24px rgba(34, 26, 99, .13), 0 2px 4px rgba(34, 26, 99, .06);
+  --btn-shadow: 0 2px 10px rgba(46, 34, 140, .13);
+  --primary-shadow: 0 6px 18px rgba(70, 48, 235, .35);
 }
 
 * { box-sizing: border-box; }
@@ -20,13 +110,47 @@
    sikeres bejelentkezés után is látható marad. */
 [hidden] { display: none !important; }
 
+/* ---------- téma váltó (minden nézetben elérhető) ---------- */
+.theme-toggle {
+  position: fixed;
+  right: calc(14px + env(safe-area-inset-right, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: background .15s, color .15s, transform .06s, box-shadow .15s;
+}
+.theme-toggle:hover { background: var(--primary-soft); }
+.theme-toggle:active { transform: scale(.94); }
+.theme-toggle svg {
+  width: 21px; height: 21px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.theme-toggle .icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+@media (max-width: 640px) {
+  .theme-toggle {
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: 42px; height: 42px;
+  }
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
-  background-image: radial-gradient(1200px 500px at 80% -10%, rgba(70, 48, 235, .10), transparent),
-                    radial-gradient(900px 400px at -10% 110%, rgba(70, 48, 235, .07), transparent);
-  color: #1d1e2c;
+  background-image: radial-gradient(1200px 500px at 80% -10%, var(--glow-a), transparent),
+                    radial-gradient(900px 400px at -10% 110%, var(--glow-b), transparent);
+  color: var(--text);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -44,7 +168,7 @@ body {
 }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .45; cursor: wait; }
-.btn.primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; box-shadow: 0 6px 18px rgba(70,48,235,.35); }
+.btn.primary { background: linear-gradient(135deg, var(--btn-a), var(--btn-b)); color: #fff; box-shadow: var(--primary-shadow); }
 .btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn.lg { padding: 14px 24px; font-size: 1rem; }
 .btn.ghost { background: transparent; color: var(--primary); }
@@ -87,7 +211,7 @@ body {
   font-size: 2.1rem;
   background: linear-gradient(135deg, var(--primary), var(--primary-2));
   border-radius: 24px;
-  box-shadow: 0 10px 24px rgba(70,48,235,.35);
+  box-shadow: var(--primary-shadow);
 }
 .login-card h1 { margin: 6px 0 0; font-size: 1.6rem; letter-spacing: -.02em; }
 .login-card h1 span { color: var(--primary); }
@@ -101,7 +225,7 @@ body {
 .login-features li {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 10px 12px;
-  background: #f8f8fe;
+  background: var(--surface-3);
   border: 1px solid var(--line);
   border-radius: 12px;
 }
@@ -110,7 +234,7 @@ body {
   fill: none; stroke: var(--primary); stroke-width: 2;
   stroke-linecap: round; stroke-linejoin: round;
 }
-.login-features b { display: block; font-size: .82rem; color: #2a2b40; }
+.login-features b { display: block; font-size: .82rem; color: var(--text-strong); }
 .login-features small {
   display: block; margin-top: 2px;
   color: var(--muted); font-size: .74rem; line-height: 1.4; font-weight: 500;
@@ -123,7 +247,8 @@ input {
   border: 1.5px solid var(--line);
   border-radius: 14px;
   font: inherit;
-  background: #fafaff;
+  background: var(--surface-2);
+  color: var(--text);
   transition: border-color .15s, box-shadow .15s;
 }
 input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
@@ -138,7 +263,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   text-align: left;
   font-size: .74rem; line-height: 1.45; font-weight: 500;
   color: var(--muted);
-  background: #f4f5fb;
+  background: var(--surface-3);
   border: 1px solid var(--line);
   border-radius: 12px;
 }
@@ -169,7 +294,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   font-size: 2rem;
   background: linear-gradient(135deg, var(--primary), var(--primary-2));
   border-radius: 24px;
-  box-shadow: 0 10px 24px rgba(70,48,235,.35);
+  box-shadow: var(--primary-shadow);
 }
 .diner-card h1 { margin: 4px 0 0; font-size: 1.45rem; letter-spacing: -.02em; }
 .diner-card .subtitle { margin: 0 0 6px; }
@@ -180,29 +305,29 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   padding: 12px 14px;
   border: 2px solid var(--line);
   border-radius: 16px;
-  background: #fafaff;
+  background: var(--surface-2);
   font: inherit; color: inherit; text-align: left;
   cursor: pointer;
   transition: border-color .15s, background .15s, transform .06s, box-shadow .15s;
 }
 .diner-option:hover:not(:disabled) {
   border-color: var(--primary-2);
-  background: linear-gradient(160deg, var(--primary-soft), #fff 75%);
-  box-shadow: 0 4px 16px rgba(70,48,235,.12);
+  background: linear-gradient(160deg, var(--primary-soft), var(--grad-end) 75%);
+  box-shadow: 0 4px 16px var(--primary-line);
   transform: translateY(-1px);
 }
 .diner-option:active:not(:disabled) { transform: scale(.99); }
 .diner-option:disabled { opacity: .55; cursor: wait; }
 .diner-option.active {
   border-color: var(--primary);
-  background: linear-gradient(160deg, var(--primary-soft), #fff 75%);
-  box-shadow: 0 4px 16px rgba(70,48,235,.12);
+  background: linear-gradient(160deg, var(--primary-soft), var(--grad-end) 75%);
+  box-shadow: 0 4px 16px var(--primary-line);
 }
 .diner-avatar {
   width: 44px; height: 44px; flex: none;
   display: grid; place-items: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  background: linear-gradient(135deg, var(--btn-a), var(--btn-b));
   color: #fff; font-weight: 700; font-size: .9rem;
 }
 .diner-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
@@ -213,7 +338,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 /* ---------- topbar ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 10;
-  background: rgba(255, 255, 255, .8);
+  background: var(--topbar-bg);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
 }
@@ -227,12 +352,12 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   background: var(--card);
   border: 1px solid var(--line);
   color: var(--primary);
-  box-shadow: 0 2px 10px rgba(46, 34, 140, .13);
+  box-shadow: var(--btn-shadow);
 }
 .topbar .btn:hover:not(:disabled) {
   background: var(--primary-soft);
-  border-color: rgba(70, 48, 235, .25);
-  box-shadow: 0 4px 14px rgba(46, 34, 140, .18);
+  border-color: var(--primary-line-strong);
+  box-shadow: var(--shadow);
 }
 /* Keskeny kijelzőn (a „Mai nap”, „Gyermek” és „Kilépés” gombokkal együtt)
    férjen el a fejléc egy sorban. */
@@ -240,7 +365,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   /* A backdrop-filter minden görgetésnél/húzásnál újramintázza az alatta
      lévő tartalmat; mobilon ez mérhetően rontja az FPS-t, ezért itt kikapcsoljuk. */
   .topbar {
-    background: #fff;
+    background: var(--nav-surface);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -255,8 +380,8 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   position: sticky; top: 63px; z-index: 9;
   margin: 0; padding: 9px 16px;
   text-align: center;
-  background: #fff4d6; color: #7a4b00;
-  border-bottom: 1px solid #f0d48a;
+  background: var(--warn-bg); color: var(--warn-text);
+  border-bottom: 1px solid var(--warn-line);
   font-size: .8rem; font-weight: 600;
 }
 @media (max-width: 640px) {
@@ -267,7 +392,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   width: 42px; height: 42px; flex: none;
   display: grid; place-items: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  background: linear-gradient(135deg, var(--btn-a), var(--btn-b));
   color: #fff; font-weight: 700; font-size: .95rem;
 }
 .user-info { flex: 1; display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
@@ -294,7 +419,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 /* ---------- toast ---------- */
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-  background: #26273d; color: #fff;
+  background: var(--toast-bg); color: var(--toast-text);
   padding: 12px 22px; border-radius: 999px;
   font-size: .88rem; box-shadow: var(--shadow-lg);
   max-width: 92vw; margin: 0;
@@ -338,13 +463,13 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   margin: 0 0 26px;
   padding: 14px 14px 18px;
   background: transparent;
-  border: 1px solid rgba(70, 48, 235, .14);
+  border: 1px solid var(--primary-line);
   border-radius: calc(var(--radius) + 4px);
 }
 .week-group:last-child { margin-bottom: 6px; }
 .week-group.week-current {
-  background: linear-gradient(180deg, rgba(70, 48, 235, .05), transparent 140px);
-  border-color: rgba(70, 48, 235, .24);
+  background: linear-gradient(180deg, var(--week-tint), transparent 140px);
+  border-color: var(--primary-line-strong);
 }
 .week-days {
   display: grid;
@@ -370,9 +495,9 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
     z-index: 15;
     width: 44px; height: 44px;
     font-size: 1.55rem;
-    background: #fff;
-    border: 1px solid rgba(70, 48, 235, .18);
-    box-shadow: 0 6px 20px rgba(46, 34, 140, .22);
+    background: var(--nav-surface);
+    border: 1px solid var(--primary-line-strong);
+    box-shadow: var(--shadow);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -393,16 +518,16 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
    árnyékkal válnak el a világos oldalháttértől. */
 .day-card {
   background: var(--card);
-  border: 1px solid rgba(70, 48, 235, .16);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(34, 26, 99, .13), 0 2px 4px rgba(34, 26, 99, .06);
+  box-shadow: var(--card-shadow);
   overflow: hidden;
   transition: transform .15s, box-shadow .15s, border-color .15s;
   scroll-margin-top: 88px;
 }
 .day-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(70, 48, 235, .3);
+  border-color: var(--primary-line-strong);
   box-shadow: var(--shadow-lg);
 }
 .day-card.day-today { outline: 2px solid var(--primary); border-color: transparent; }
@@ -430,7 +555,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .day-head {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 16px;
-  background: linear-gradient(135deg, rgba(70,48,235,.06), rgba(109,91,255,.10));
+  background: linear-gradient(135deg, var(--day-head-a), var(--day-head-b));
   border-bottom: 1px solid var(--line);
 }
 .day-num {
@@ -442,14 +567,14 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .day-title { flex: 1; font-weight: 700; font-size: .95rem; }
 .day-badge { font-size: .72rem; font-weight: 700; border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
 .day-badge.ok { color: var(--ok); background: rgba(18,160,94,.12); }
-.day-badge.none { color: var(--muted); background: #eceef5; }
+.day-badge.none { color: var(--muted); background: var(--badge-neutral-bg); }
 .day-badge.cancelled { color: var(--danger); background: rgba(217,54,62,.12); }
 
 .today-tag {
   display: inline-block; margin-left: 4px;
   font-size: .64rem; font-weight: 800; letter-spacing: .04em;
   text-transform: uppercase;
-  color: #fff; background: var(--primary);
+  color: var(--on-accent); background: var(--primary);
   border-radius: 999px; padding: 2px 7px; vertical-align: 2px;
 }
 
@@ -461,12 +586,12 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .deadline {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .7rem; font-weight: 700;
-  color: #3d3f56; background: #f1f2f9;
+  color: var(--deadline-text); background: var(--deadline-bg);
   border: 1px solid var(--line);
   border-radius: 999px; padding: 4px 9px;
 }
 .deadline.expired {
-  color: var(--muted); background: #f6f6f9;
+  color: var(--muted); background: var(--deadline-expired-bg);
   text-decoration: line-through; opacity: .75;
 }
 
@@ -489,9 +614,9 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   color: var(--muted);
 }
 /* A fő (ebéd) blokk címe kicsit hangsúlyosabb, a reggeli/vacsora halványabb. */
-.meal-group-lunch .meal-group-title { color: #3d3f56; }
-.meal-group-breakfast .meal-group-title { color: #b07a12; }
-.meal-group-dinner .meal-group-title { color: #6b4bb8; }
+.meal-group-lunch .meal-group-title { color: var(--text-strong); }
+.meal-group-breakfast .meal-group-title { color: var(--breakfast-title); }
+.meal-group-dinner .meal-group-title { color: var(--dinner-title); }
 
 .meal-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 480px) { .meal-choices { grid-template-columns: 1fr; } }
@@ -500,7 +625,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   border: 2px solid var(--line);
   border-radius: 14px;
   padding: 13px;
-  background: #fafaff;
+  background: var(--surface-2);
   cursor: pointer;
   text-align: left;
   font: inherit;
@@ -525,24 +650,24 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 }
 /* A menü címkéje étkezésenként más színű, hogy a reggeli/vacsora is
    megkülönböztethető legyen az ebédtől. */
-.meal-tag.meal-tag-breakfast { color: #a86a00; background: #fdf0d5; }
-.meal-tag.meal-tag-dinner { color: #5b3fb3; background: #eee8ff; }
+.meal-tag.meal-tag-breakfast { color: var(--breakfast-tag); background: var(--breakfast-tag-bg); }
+.meal-tag.meal-tag-dinner { color: var(--dinner-tag); background: var(--dinner-tag-bg); }
 
 .meal-choice .meal-name { font-size: .9rem; line-height: 1.4; }
 .meal-choice .meal-meta { font-size: .74rem; color: var(--muted); margin-top: 7px; }
 
 .meal-choice.selected {
   border-color: var(--primary);
-  background: linear-gradient(160deg, var(--primary-soft), #fff 70%);
+  background: linear-gradient(160deg, var(--primary-soft), var(--grad-end) 70%);
   box-shadow: 0 4px 16px rgba(70,48,235,.14);
 }
-.meal-choice.selected .meal-tag { background: var(--primary); color: #fff; }
+.meal-choice.selected .meal-tag { background: var(--primary); color: var(--on-accent); }
 .meal-choice.selected::after {
   content: '✓';
   position: absolute; top: 10px; right: 12px;
   width: 22px; height: 22px;
   display: grid; place-items: center;
-  background: var(--ok); color: #fff;
+  background: var(--ok); color: var(--on-ok);
   border-radius: 50%; font-size: .8rem; font-weight: 800;
   animation: pop2 .18s ease-out;
 }
@@ -576,7 +701,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   box-shadow: var(--shadow);
   font-size: .88rem;
   line-height: 1.6;
-  color: #2a2b40;
+  color: var(--text-strong);
 }
 .seo-content h2 { margin: 0 0 10px; font-size: 1.15rem; letter-spacing: -.01em; }
 .seo-content h3 { margin: 18px 0 8px; font-size: .98rem; }

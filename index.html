@@ -1,9 +1,22 @@
 <!DOCTYPE html>
-<html lang="hu">
+<html lang="hu" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#4630eb">
+<meta name="theme-color" content="#0f0f18">
+<script>
+  /* Téma a CSS betöltése előtt: a sötét az alapértelmezett, a mentett
+     világos beállítást még a stíluslap előtt alkalmazzuk (nincs villanás). */
+  (function () {
+    var light = false;
+    try { light = localStorage.getItem('zm_theme') === 'light'; } catch (_) {}
+    if (light) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#f2f3fa');
+    }
+  })();
+</script>
 <meta name="description" content="ZipMeal Lite (ziplite.kecske.win) - Nem hivatalos, gyors, offline is használható ZipMeal ebédválasztó PWA iskolai és közétkeztetéshez. Menza befizetés, iskolai ebéd lemondás, ebéd rendelés egy helyen — reklámok és tracking nélkül.">
 <meta name="keywords" content="ZiPMEAL, ZiPMEAL lite, ziplite, ebédválasztó, ebéd rendelés, menü, iskolai ebéd, iskolai ebéd lemondás, iskolai ebéd rendelés, menza befizetés, menza rendelés, iskolai menza, közétkeztetés, közétkeztetés étlap, óvodai étkezés, iskolai étkezés, étlap, ebéd lemondás, ebédbefizetés, ebéd választás, Budapest, Debrecen, Szeged, Miskolc, Pécs, Győr, Nyíregyháza, Kecskemét, Székesfehérvár, Szombathely, Szolnok, Tatabánya, Kaposvár, Érd, Veszprém, Békéscsaba, Zalaegerszeg, Sopron, Eger, Nagykanizsa, Dunaújváros, Hódmezővásárhely, Salgótarján, Cegléd, Baja, Esztergom">
 <link rel="canonical" href="https://ziplite.kecske.win/">
@@ -236,6 +249,16 @@
       </footer>
     </div>
   </div>
+
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Világos mód" title="Világos mód" aria-pressed="true">
+    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  </button>
 
   <script src="app.js"></script>
 </body>

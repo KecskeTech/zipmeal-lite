@@ -27,6 +27,42 @@ const store = {
   set refresh(t) { t ? localStorage.setItem('zm_refresh', t) : localStorage.removeItem('zm_refresh'); },
 };
 
+/* ---------- téma (sötét / világos) ----------
+   A sötét az alapértelmezett. A kezdeti data-theme attribútumot az
+   index.html inline szkriptje állítja be még a CSS előtt (villanás nélkül),
+   itt csak szinkronban tartjuk a meta színt, a gomb feliratát és mentünk. */
+const THEME_KEY = 'zm_theme';
+
+function applyTheme(theme) {
+  const t = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', t === 'dark' ? '#0f0f18' : '#f2f3fa');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    const label = t === 'dark' ? 'Világos mód' : 'Sötét mód';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+  }
+}
+
+function setTheme(theme) {
+  applyTheme(theme);
+  try { localStorage.setItem(THEME_KEY, theme === 'light' ? 'light' : 'dark'); } catch (_) { /* privát mód */ }
+}
+
+function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (_) { /* privát mód */ }
+  applyTheme(saved === 'light' ? 'light' : 'dark');
+  document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  });
+}
+
+initTheme();
+
 /* ---------- offline cache (localStorage) ----------
    A havi orders válasz és a munkamenet-adatai localStorage-ba kerülnek, hogy
    offline is látható legyen a becsült étlap. Az API-t a service worker nem
