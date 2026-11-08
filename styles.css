@@ -719,11 +719,25 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   line-height: 1.6;
   color: var(--text-strong);
 }
-.seo-content h2 { margin: 0 0 10px; font-size: 1.15rem; letter-spacing: -.01em; }
+.seo-content h2 { margin: 0 0 10px; font-size: 1.15rem; letter-spacing: -.01em; scroll-margin-top: 16px; }
+.seo-content h2:not(:first-child) { margin-top: 24px; }
 .seo-content h3 { margin: 18px 0 8px; font-size: .98rem; }
 .seo-content p { margin: 0 0 10px; }
 .seo-list { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 4px; }
 .seo-note { font-size: .76rem; color: var(--muted); margin-top: 14px; }
+
+/* Gyorslinkek és GYIK a keresési kifejezésekhez (zipmeal bejelentkezés,
+   étlap, Zalaegerszeg, Kaposvár, web és eszközök). */
+.seo-links { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; }
+.seo-links a {
+  font-size: .76rem; font-weight: 700;
+  color: var(--primary); background: var(--primary-soft);
+  border-radius: 999px; padding: 5px 11px; text-decoration: none;
+}
+.seo-links a:hover { text-decoration: underline; }
+.seo-faq { margin: 0; display: grid; gap: 8px; }
+.seo-faq dt { font-weight: 700; color: var(--text-strong); }
+.seo-faq dd { margin: 0 0 4px; color: var(--text); }
 
 @media (max-width: 640px) {
   .seo-block { padding: 0 12px 24px; }
