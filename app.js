@@ -316,6 +316,16 @@ function fmtDeadline(iso) {
   });
 }
 
+/* A kártyacsippantás (az étel elfogyasztásának) helyi ideje óra:perc formában.
+   Az orders válasz `consumedDate` mezőjét használjuk – ugyanazt, amit az
+   eredeti zipmeal kliens is kiír az étel mellett. */
+function fmtConsumedTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' });
+}
+
 function isNetworkError(err) {
   return !navigator.onLine || err instanceof TypeError ||
     /Failed to fetch|NetworkError|Load failed|ERR_NETWORK|ERR_INTERNET_DISCONNECTED/i.test(err?.message || '');
@@ -675,12 +685,14 @@ function collectDays() {
 /* ---------- mutations ---------- */
 /* Az `o` a kiválasztott étkezés rendelése (reggeli / ebéd / vacsora),
    a `menuLetter` pedig a választási betű (A/B/…; üres = egyetlen menü). */
-/* Az API a `kezdete`/`vege` mezőkben a szerver napját várja (YYYYMMDD) – ez a
-   rendelés orderDate/mealDate ISO-stringjének UTC dátumrésze (ymd), NEM a
-   megjelenített helyi nap. */
+/* Az API a `kezdete`/`vege` mezőkben a HELYI (magyar) napot várja (YYYYMMDD).
+   Az eredeti zipmeal kliens is a kiválasztott nap `niceDate`-jét küldi, ami a
+   rendelés ISO-dátumának helyi napja. A korábbi UTC-dátumrész (ymd) télen
+   egy nappal korábbi napot adott (pl. december 1. -> "20261130"), erre a
+   szerver 403-mal válaszolt. */
 function apiDayKey(day, o) {
   const iso = o?.orderDate || o?.menuMeal?.mealDate;
-  return iso ? ymd(iso) : day.dateKey;
+  return iso ? dayKey(iso) : day.dateKey;
 }
 
 async function chooseMeal(day, o, menuLetter) {
@@ -702,7 +714,7 @@ async function chooseMeal(day, o, menuLetter) {
     institutionId: state.diner.institutionId,
     menu: menuLetter || 'A',
   };
-  await api('/users/choose-meal', { method: 'POST', body });
+  await api('/users/choose-meal?no_cache=' + Date.now(), { method: 'POST', body });
 }
 
 async function cancelDay(day) {
@@ -711,7 +723,7 @@ async function cancelDay(day) {
     throw new Error('A lemondási határidő lejárt.');
   }
   const key = apiDayKey(day, day.order);
-  await api('/users/cancel-meals', {
+  await api('/users/cancel-meals?no_cache=' + Date.now(), {
     method: 'POST',
     body: { cardId: state.diner.cardId, organOrder: { kezdete: key, vege: key } },
   });
@@ -723,7 +735,7 @@ async function uncancelDay(day) {
     throw new Error('A lemondási határidő lejárt.');
   }
   const key = apiDayKey(day, day.order);
-  await api('/users/add-meal', {
+  await api('/users/add-meal?no_cache=' + Date.now(), {
     method: 'POST',
     body: { cardId: state.diner.cardId, organOrder: { kezdete: key, vege: key } },
   });
@@ -801,11 +813,21 @@ function mealGroupBlock(day, group) {
     <section class="meal-group meal-group-${group.key}">
       <header class="meal-group-head">
         <span class="meal-group-title">${esc(group.label)}</span>
+        ${consumedChip(group.order)}
       </header>
       <div class="meal-choices">
         ${menus.map((meal) => mealCard(day, group, meal)).join('')}
       </div>
     </section>`;
+}
+
+/* Ha a kártyát már lecsippantották (a rendelés `consumedDate` mezője kitöltött),
+   kiírjuk a csippantás helyi idejét. Lemondott napnál nem jelenik meg. */
+function consumedChip(order) {
+  if (!order?.consumedDate || order.cancelDate) return '';
+  const time = fmtConsumedTime(order.consumedDate);
+  if (!time) return '';
+  return `<span class="meal-ate" title="A kártya csippantásának ideje">${esc(time)}-kor ettél</span>`;
 }
 
 function isUnselected(day) {
@@ -1623,7 +1645,11 @@ function demoWeekRange(offset, withMeals) {
           selectMenuDeadline: deadline,
           cancelDeadline: deadline,
           cancelDate: null,
-          consumedDate: null,
+          // Demóban a mai és korábbi napok ebéd A rendelése már lecsippantott,
+          // hogy a „hány órakor ettél” felirat kipróbálható legyen.
+          consumedDate: group === 'lunch' && variant === 'A' && key <= todayIso()
+            ? new Date(key + 'T12:15:00').toISOString()
+            : null,
           quantity: 1,
           cardId: state.diner?.cardId,
           externalOrderId: `${key}${type}`,

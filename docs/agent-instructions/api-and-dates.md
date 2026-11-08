@@ -20,13 +20,17 @@ helyi nappal, nyáron (CEST, UTC+2) 01:00-re csúszik → a hétfői/vasárnapi 
 rossz hétre kerülnek, és a szüneti hetek átugrása elromlik.
 
 Kétféle kulcs:
-- `ymd(iso)` → `"YYYYMMDD"`, a **szerver** napja (choose-meal / cancel-meals
-  `kezdete`/`vege`): az ISO UTC dátumrésze.
+- `ymd(iso)` → `"YYYYMMDD"`, az ISO string UTC dátumrésze. Csak tartalék
+  (pl. `dayIso` hibás dátum esetén); a `choose-meal` / `cancel-meals` /
+  `add-meal` body-ba **nem** ezt küldjük.
 - `dayIso(iso)` / `dayKey(iso)` → a **megjelenített** helyi nap (`YYYY-MM-DD` /
   `YYYYMMDD`). `dayInfo()`, `collectDays()`, a hét-ellenőrzés (`dataHasMeals`,
   `weekHasMeals`) és a napkártyák kulcsa mindez.
 - `apiDayKey(day, order)` adja a `choose-meal`/`cancel-meals`/`add-meal` body-ba
-  a napot (az order `orderDate`/`menuMeal.mealDate` UTC kulcsa).
+  a napot: a rendelés `orderDate`/`menuMeal.mealDate` **helyi** napját
+  (`dayKey`), mert az eredeti zipmeal kliens is a `niceDate`-et (helyi dátum)
+  küldi. A korábbi UTC-dátumrész télen egy nappal korábbi napot adott
+  (pl. december 1. → `20261130`), amire a szerver 403-mal válaszolt.
 
 ## Ékezetes stringek
 

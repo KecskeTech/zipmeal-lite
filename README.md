@@ -30,6 +30,9 @@ https://ziplite.kecske.win/
 - Az étel kiválasztása, lemondása és a lemondás visszavonása
 - A **választási (`selectMenuDeadline`) és lemondási (`cancelDeadline`) határidők**
   külön megjelenítése; a lejárt határidő után az érintett gombok szürkék / letiltottak
+- **A kártyacsippantás ideje**: ha az ebéd kártyádat már lecsippantották, az ebéd
+  fejlécében megjelenik, hogy hány órakor ettél (pl. „12:35-kor ettél”) – az
+  orders válasz `consumedDate` mezője alapján, ugyanúgy, ahogy az eredeti kliens
 - Nyitáskor automatikusan az **aznapi ebédre ugrik** (ha nincs mai menü, a következő napra)
 - **Cache-elt indulás**: ha korábban már be voltál jelentkezve, az app a mentett
   étlapot azonnal megjeleníti (a mai napra görgetve) a login képernyő helyett, és
