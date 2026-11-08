@@ -14,7 +14,7 @@ Egyetlen statikus PWA (nincs build, nincs csomagkezelő): `index.html` + `styles
 | `app.js` | teljes klienslogika: API-hívások, tokenek, heti nézet, renderelés, demó |
 | `index.html` | 3 nézet: `#login-view`, `#diner-view` (szülői gyermekválasztó), `#main-view` |
 | `styles.css` | design tokenek a `:root`-ban (`--primary`, `--bg`, `--card`, `--line`…), a világos téma felülírása `:root[data-theme="light"]` alatt; BEM-szerű, sima osztálynevek. A `.landing-*` osztályok a statikus SEO-aloldalakhoz tartoznak |
-| `zipmeal-*.html` | statikus, indexelhető SEO-aloldalak (bejelentkezés, étlap, Zalaegerszeg, Kaposvár, web/eszközök). Nem appnézetek: nincs bennük `app.js`, csak a közös `styles.css` és a téma-inline szkript |
+| `zipmeal-*.html` | statikus, indexelhető SEO-aloldalak (bejelentkezés, étlap, Zalaegerszeg, Kaposvár, web/eszközök). Nem appnézetek: nincs bennük `app.js`, csak a közös `styles.css` és a téma-inline szkript. A kanonikus URL kiterjesztés nélküli (`/zipmeal-etlap`), a fájl viszont `.html` |
 | `sw.js` | app shell cache; az API-t **nem** cache-eli. Ha a HTML/CSS/JS változik, **emeld a `CACHE` verziót** (pl. `zipmeal-lite-v38`) |
 | `sitemap.xml` | a főoldal + az összes SEO-aloldal; új aloldalnál ide is fel kell venni |
 | `CNAME` | `ziplite.kecske.win` |

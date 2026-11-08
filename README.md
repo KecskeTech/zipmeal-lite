@@ -57,9 +57,11 @@ lemondásgombok ilyenkor le vannak tiltva, és egy figyelmeztető sáv jelzi az 
 
 A főoldal mellett önálló, statikus aloldalak is vannak a gyakori keresésekre:
 `zipmeal-bejelentkezes.html`, `zipmeal-etlap.html`, `zipmeal-zalaegerszeg.html`,
-`zipmeal-kaposvar.html` és `zipmeal-web.html`. Ezek valódi tartalmat adnak (nem
-átirányítások), a `sitemap.xml`-ben is szerepelnek, és a főoldalról is linkeljük őket.
-Új aloldalnál a `sitemap.xml`-t és a `sw.js` `SHELL` listáját is frissíteni kell.
+`zipmeal-kaposvar.html` és `zipmeal-web.html`. A fájlok `.html` végződésűek, a
+kanonikus URL viszont kiterjesztés nélküli (pl. `/zipmeal-etlap`), mert a GitHub Pages
+ezt is kiszolgálja. Ezek valódi tartalmat adnak (nem átirányítások), a `sitemap.xml`-ben
+is szerepelnek, és a főoldalról is linkeljük őket. Új aloldalnál a `sitemap.xml`-t és a
+`sw.js` `SHELL` listáját is frissíteni kell.
 
 ## Étkezés-típusok (reggeli / vacsora)
 
