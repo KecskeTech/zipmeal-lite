@@ -749,16 +749,12 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
   margin: 0 auto;
   padding: 18px 18px 0;
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
-  justify-content: space-between;
 }
 .landing-brand {
   font-weight: 800; font-size: 1.05rem; letter-spacing: -.01em;
   color: var(--text-strong); text-decoration: none;
 }
 .landing-brand span { color: var(--primary); }
-.landing-nav { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .8rem; }
-.landing-nav a { color: var(--muted); text-decoration: none; font-weight: 600; }
-.landing-nav a:hover, .landing-nav a[aria-current="page"] { color: var(--primary); }
 
 .landing { max-width: 820px; padding-top: 14px; }
 .landing-card {
@@ -790,9 +786,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px
 .landing-card ul, .landing-card ol { margin: 0 0 12px; padding-left: 22px; display: grid; gap: 5px; }
 .landing-card a { color: var(--primary); }
 .landing-lead { font-size: .96rem; color: var(--text-strong); }
-.breadcrumbs { font-size: .76rem; color: var(--muted); margin-bottom: 10px; }
-.breadcrumbs a { color: var(--muted); text-decoration: none; }
-.breadcrumbs a:hover { color: var(--primary); }
 .landing-cta { margin: 18px 0 4px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .landing-cta small { color: var(--muted); font-size: .74rem; }
 .landing-related {
