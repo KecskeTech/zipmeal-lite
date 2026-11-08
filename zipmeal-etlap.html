@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="hu" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f18">
+<script>
+  (function () {
+    var light = false;
+    try { light = localStorage.getItem('zm_theme') === 'light'; } catch (_) {}
+    if (light) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#f2f3fa');
+    }
+  })();
+</script>
+<title>Zipmeal étlap – heti menü, választás és lemondás</title>
+<meta name="description" content="Zipmeal étlap a ZiPMEAL Lite-ban: heti menü reggelivel, ebéddel és vacsorával, választási és lemondási határidők, szüneti hetek átugrása. Nem hivatalos, offline kliens.">
+<link rel="canonical" href="https://ziplite.kecske.win/zipmeal-etlap.html">
+<meta property="og:title" content="Zipmeal étlap – ZiPMEAL Lite">
+<meta property="og:description" content="Hogyan néz ki a Zipmeal étlap a ZiPMEAL Lite-ban, és hogyan válthatsz hetet, ételt vagy mondhatod le az ebédet.">
+<meta property="og:url" content="https://ziplite.kecske.win/zipmeal-etlap.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ZiPMEAL Lite">
+<meta property="og:locale" content="hu_HU">
+<meta property="og:image" content="https://ziplite.kecske.win/icon.svg">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Zipmeal étlap – ZiPMEAL Lite",
+  "url": "https://ziplite.kecske.win/zipmeal-etlap.html",
+  "description": "Zipmeal étlap a ZiPMEAL Lite-ban: heti menü, választási és lemondási határidők, szüneti hetek és offline működés.",
+  "inLanguage": "hu",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "ZiPMEAL Lite",
+    "url": "https://ziplite.kecske.win/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "hu",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Mit tartalmaz a Zipmeal étlap a ZiPMEAL Lite-ban?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A heti menüt egy hétre bontva mutatja: reggelit, ebédet és vacsorát, de csak azokat az étkezéseket, amelyekre az adott napon tényleg van menü. A választási és lemondási határidő is a napkártyán látszik."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Hogyan lehet hetet váltani a Zipmeal étlapon?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A felső nyilakkal lépsz előre vagy hátra egy hetet. A ZiPMEAL Lite a szüneti, étel nélküli heteket automatikusan átugorja, a Mai nap gomb pedig visszavisz az aktuális hétre."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Látszik az étlapon, hogy mikor ettem?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Igen. Ha a kártyádat már lecsippantották, az ebéd fejlécében megjelenik a csippantás helyi ideje, például 12:35-kor ettél."
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<header class="landing-top">
+  <a class="landing-brand" href="./">ZiPMEAL <span>Lite</span></a>
+  <nav class="landing-nav" aria-label="Oldalak">
+    <a href="./">App</a>
+    <a href="zipmeal-bejelentkezes.html">Bejelentkezés</a>
+    <a href="zipmeal-etlap.html" aria-current="page">Étlap</a>
+    <a href="zipmeal-zalaegerszeg.html">Zalaegerszeg</a>
+    <a href="zipmeal-kaposvar.html">Kaposvár</a>
+    <a href="zipmeal-web.html">Web / eszközök</a>
+  </nav>
+</header>
+<main class="view landing">
+  <article class="landing-card">
+    <nav class="breadcrumbs" aria-label="Morzsamenü"><a href="./">Főoldal</a> › <span>Zipmeal étlap</span></nav>
+    <h1>Zipmeal étlap – heti menü, választás és lemondás</h1>
+    <p class="landing-lead">A Zipmeal étlap a ZiPMEAL Lite-ban egy hétre bontva jelenik
+    meg, a választási és lemondási határidőkkel együtt. Csak azt mutatja, ami a saját
+    étkeződhöz tényleg tartozik.</p>
+
+    <h2>Mit tartalmaz a Zipmeal étlap?</h2>
+    <p>A bejelentkezés és az étkező kiválasztása után a havi menüből a kiválasztott hét
+    napjai látszanak. A napkártyán étkezésenként külön blokk van:</p>
+    <ul>
+      <li><b>Reggeli</b> – csak akkor, ha arra a napra van reggeli menü.</li>
+      <li><b>Ebéd</b> – a fő blokk, jellemzően A/B menüválasztással.</li>
+      <li><b>Vacsora</b> – csak akkor, ha az intézmény ad vacsorát.</li>
+    </ul>
+    <p>Az étel neve mellett a kalória és az allergének is megjelenhetnek. A kiválasztott
+    menü zöld pipát kap, a lemondott nap külön jelzést.</p>
+
+    <div class="landing-cta">
+      <a class="btn primary" href="./">Zipmeal étlap megnyitása</a>
+      <small>Bejelentkezés a saját ZiPMEAL-fiókkal</small>
+    </div>
+
+    <h2>Heti navigáció és szüneti hetek</h2>
+    <p>A felső nyilakkal egy-egy hetet lépsz előre vagy hátra. A hónaphatáron átnyúló
+    heteket is kezeli, így a november végi és december eleji napok ugyanabban a heti
+    nézetben maradnak. A <b>Mai nap</b> gomb bármelyik hétből visszavisz az aktuális
+    hétre, és a mai napra görget.</p>
+    <p>Ha egy héten egyáltalán nincs menü (őszi, téli vagy tavaszi szünet), a nyilak
+    automatikusan a következő ételes hétre lépnek. Ha abban az irányban már nincs több
+    ételes hét, a kép az utolsó ételes héten marad – nem ugrik értelmetlenül egy évet.</p>
+
+    <h2>Választás és lemondás</h2>
+    <p>Az étel kiválasztása a menükártyára kattintva történik. A napkártyán két határidő
+    látszik: a <b>választási</b> és a <b>lemondási</b> határidő. A lejárt határidő után a
+    kapcsolódó gombok szürkék és nem kattinthatók. A lemondás a lemondási határidőig
+    visszavonható a „Mégis kérem” gombbal.</p>
+    <p>A választás és a lemondás a ZiPMEAL rendszerében történik, ugyanazzal a fiókkal,
+    amit a hivatalos felületen is használsz. A ZiPMEAL Lite csak kényelmesebb felületet ad
+    hozzá.</p>
+
+    <h2>Kártyacsippantás ideje</h2>
+    <p>Ha az ebéd kártyádat már lecsippantották, az ebéd fejlécében megjelenik a
+    csippantás helyi ideje, például <b>12:35-kor ettél</b>. Ez ugyanaz az adat, amit az
+    eredeti kliens is megjelenít, és segít visszaellenőrizni, hogy tényleg elfogyasztottad-e
+    az aznapi ebédet.</p>
+
+    <h2>Offline működés</h2>
+    <p>A korábban betöltött étlap internet nélkül is megjelenik, mert az app a saját
+    böngésződben cache-eli. Offline módban a választás és a lemondás nem elérhető, de a
+    menü és a határidők átnézhetők.</p>
+
+    <h2>Gyakori kérdések</h2>
+    <dl class="seo-faq">
+      <dt>Mit tartalmaz a Zipmeal étlap?</dt>
+      <dd>Heti bontásban a reggelit, ebédet és vacsorát – csak azt, amire az adott napon
+      van menü –, a határidőkkel együtt.</dd>
+      <dt>Hogyan lehet hetet váltani?</dt>
+      <dd>A felső nyilakkal, illetve a Mai nap gombbal. Az üres, szüneti heteket az app
+      automatikusan átugorja.</dd>
+      <dt>Látszik, hogy mikor ettem?</dt>
+      <dd>Igen, a kártyacsippantás helyi ideje az ebéd fejlécében jelenik meg.</dd>
+    </dl>
+
+    <div class="landing-related">
+      <h2>Kapcsolódó oldalak</h2>
+      <ul>
+        <li><a href="zipmeal-bejelentkezes.html">Zipmeal bejelentkezés lépésről lépésre</a></li>
+        <li><a href="zipmeal-zalaegerszeg.html">Zipmeal Zalaegerszeg</a></li>
+        <li><a href="zipmeal-kaposvar.html">Zipmeal Kaposvár</a></li>
+        <li><a href="zipmeal-web.html">Zipmeal web, eszközök és vezetőség</a></li>
+      </ul>
+    </div>
+
+    <p class="landing-note">A ZiPMEAL Lite nem hivatalos kliens: nem áll kapcsolatban a
+    ZiPMEAL szolgáltatással. Az étlap és a rendelések a ZiPMEAL saját rendszeréből
+    származnak. Nyílt forráskódú (AGPL-3.0), reklámok és tracking nélkül.</p>
+  </article>
+</main>
+<footer class="landing-foot">
+  <p>ZiPMEAL Lite – nem hivatalos kliens · AGPL-3.0 ·
+  <a href="https://github.com/KecskeTech/zipmeal-lite">forráskód</a> ·
+  <a href="./">az alkalmazás</a></p>
+</footer>
+</body>
+</html>

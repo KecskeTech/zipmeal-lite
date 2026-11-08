@@ -53,6 +53,14 @@ a korábban betöltött hetek étlapja és a választások láthatók; a válasz
 lemondásgombok ilyenkor le vannak tiltva, és egy figyelmeztető sáv jelzi az offline
 állapotot.
 
+## SEO-aloldalak
+
+A főoldal mellett önálló, statikus aloldalak is vannak a gyakori keresésekre:
+`zipmeal-bejelentkezes.html`, `zipmeal-etlap.html`, `zipmeal-zalaegerszeg.html`,
+`zipmeal-kaposvar.html` és `zipmeal-web.html`. Ezek valódi tartalmat adnak (nem
+átirányítások), a `sitemap.xml`-ben is szerepelnek, és a főoldalról is linkeljük őket.
+Új aloldalnál a `sitemap.xml`-t és a `sw.js` `SHELL` listáját is frissíteni kell.
+
 ## Étkezés-típusok (reggeli / vacsora)
 
 Az orders válasz `mealDict` mezője képezi le a `mealType`-ot étkezésre:

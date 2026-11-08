@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="hu" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f18">
+<script>
+  (function () {
+    var light = false;
+    try { light = localStorage.getItem('zm_theme') === 'light'; } catch (_) {}
+    if (light) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#f2f3fa');
+    }
+  })();
+</script>
+<title>Zipmeal bejelentkezés – ZiPMEAL Lite (nem hivatalos)</title>
+<meta name="description" content="Zipmeal bejelentkezés lépésről lépésre a ZiPMEAL Lite-ban: saját ZiPMEAL fiók, jelszókezelés, szülői fiók és gyakori hibák. Nem hivatalos, offline is működő kliens.">
+<link rel="canonical" href="https://ziplite.kecske.win/zipmeal-bejelentkezes.html">
+<meta property="og:title" content="Zipmeal bejelentkezés – ZiPMEAL Lite">
+<meta property="og:description" content="Hogyan működik a Zipmeal bejelentkezés a ZiPMEAL Lite-ban, és mire érdemes figyelni.">
+<meta property="og:url" content="https://ziplite.kecske.win/zipmeal-bejelentkezes.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ZiPMEAL Lite">
+<meta property="og:locale" content="hu_HU">
+<meta property="og:image" content="https://ziplite.kecske.win/icon.svg">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Zipmeal bejelentkezés – ZiPMEAL Lite",
+  "url": "https://ziplite.kecske.win/zipmeal-bejelentkezes.html",
+  "description": "Zipmeal bejelentkezés lépésről lépésre a ZiPMEAL Lite-ban: saját fiók, jelszókezelés, szülői fiók és gyakori hibák.",
+  "inLanguage": "hu",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "ZiPMEAL Lite",
+    "url": "https://ziplite.kecske.win/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "hu",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Milyen adatokkal működik a Zipmeal bejelentkezés?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A saját ZiPMEAL-fiókod e-mail címével és jelszavával. A ZiPMEAL Lite nem hoz létre külön fiókot, és a jelszó kizárólag a zipmeal.hu szervereire kerül."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Miért nem tudok bejelentkezni a Zipmeal fiókommal?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A leggyakoribb ok a hibás e-mail cím vagy jelszó, illetve egy lejárt munkamenet. Ellenőrizd az adatokat a hivatalos zipmeal.hu felületen, majd próbáld újra. Ha szülői fiókod van, bejelentkezés után még az étkezőt is ki kell választanod."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Megmarad a bejelentkezésem az eszközön?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Igen, a munkamenet a böngésző tárolójában marad, ezért az app újranyitáskor is betölti a korábban látott étlapot. A Kilépés gomb törli a tokeneket és a helyben cache-elt étlapot is."
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<header class="landing-top">
+  <a class="landing-brand" href="./">ZiPMEAL <span>Lite</span></a>
+  <nav class="landing-nav" aria-label="Oldalak">
+    <a href="./">App</a>
+    <a href="zipmeal-bejelentkezes.html" aria-current="page">Bejelentkezés</a>
+    <a href="zipmeal-etlap.html">Étlap</a>
+    <a href="zipmeal-zalaegerszeg.html">Zalaegerszeg</a>
+    <a href="zipmeal-kaposvar.html">Kaposvár</a>
+    <a href="zipmeal-web.html">Web / eszközök</a>
+  </nav>
+</header>
+<main class="view landing">
+  <article class="landing-card">
+    <nav class="breadcrumbs" aria-label="Morzsamenü"><a href="./">Főoldal</a> › <span>Zipmeal bejelentkezés</span></nav>
+    <h1>Zipmeal bejelentkezés a ZiPMEAL Lite-ban</h1>
+    <p class="landing-lead">A Zipmeal bejelentkezés itt a saját ZiPMEAL-fiókoddal történik.
+    Nincs külön regisztráció, és a jelszavad nem kerül ehhez a klienshez.</p>
+
+    <h2>Hogyan működik a Zipmeal bejelentkezés?</h2>
+    <ol>
+      <li>Nyisd meg a <a href="./">ZiPMEAL Lite főoldalát</a>.</li>
+      <li>Írd be a ZiPMEAL-fiókod e-mail címét és jelszavát.</li>
+      <li>Szülői fióknál válaszd ki, melyik gyermek étkezését szeretnéd kezelni.</li>
+      <li>A bejelentkezés után betölt a heti étlap, a választási és lemondási határidőkkel.</li>
+    </ol>
+    <p>A bejelentkezés ugyanazzal a fiókkal működik, amit a hivatalos
+    <b>zipmeal.hu</b> felületen is használsz. Ez az oldal nem kér új jelszót, nem kér
+    bankkártyaadatot, és nem küld semmilyen adatot harmadik félnek.</p>
+
+    <div class="landing-cta">
+      <a class="btn primary" href="./">Zipmeal bejelentkezés indítása</a>
+      <small>Nem hivatalos kliens · AGPL-3.0</small>
+    </div>
+
+    <h2>Biztonság és munkamenet</h2>
+    <p>A jelszó kizárólag a zipmeal.hu szervereire kerül, a bejelentkezés után kapott
+    tokenek pedig a saját böngésződ tárolójában maradnak. A ZiPMEAL Lite saját szervert
+    nem használ, így nincs hol tárolnia a belépési adataidat. A <b>Kilépés</b> gomb
+    törli a tokeneket és a helyben mentett étlapot is.</p>
+    <p>Ha közös vagy nyilvános számítógépet használsz, mindenképpen jelentkezz ki a
+    használat után. A munkamenet lejárta után az app a refresh tokennel automatikusan
+    frissít; ha ez sem sikerül, újra be kell jelentkezned.</p>
+
+    <h2>Gyakori bejelentkezési hibák</h2>
+    <ul>
+      <li><b>Hibás e-mail vagy jelszó:</b> ellenőrizd az adatokat a hivatalos zipmeal.hu
+      felületen. A Zipmeal Lite ugyanazt a fiókot használja, külön jelszó nincs.</li>
+      <li><b>Lejárt munkamenet:</b> az app megpróbálja frissíteni a tokent; ha nem megy,
+      a login képernyőre vált.</li>
+      <li><b>Szülői fiók:</b> bejelentkezés után előbb az étkezőt (gyermeket) kell
+      kiválasztani, csak utána jelenik meg az étlap.</li>
+      <li><b>Nincs internet:</b> a korábban betöltött étlap offline is látható, de a
+      bejelentkezés és a módosítás ilyenkor nem elérhető.</li>
+    </ul>
+
+    <h2>Gyakori kérdések</h2>
+    <dl class="seo-faq">
+      <dt>Milyen adatokkal működik a Zipmeal bejelentkezés?</dt>
+      <dd>A saját ZiPMEAL-fiókod e-mail címével és jelszavával. Külön regisztráció nincs.</dd>
+      <dt>Miért nem tudok bejelentkezni?</dt>
+      <dd>Leggyakrabban hibás e-mail vagy jelszó, illetve lejárt munkamenet áll a
+      háttérben. Ellenőrizd az adatokat a zipmeal.hu oldalon, majd próbáld újra.</dd>
+      <dt>Megmarad a bejelentkezésem?</dt>
+      <dd>Igen, a böngésződ tárolójában. A Kilépés gomb viszont mindent töröl.</dd>
+    </dl>
+
+    <div class="landing-related">
+      <h2>Kapcsolódó oldalak</h2>
+      <ul>
+        <li><a href="zipmeal-etlap.html">Zipmeal étlap – heti menü és választás</a></li>
+        <li><a href="zipmeal-zalaegerszeg.html">Zipmeal Zalaegerszeg</a></li>
+        <li><a href="zipmeal-kaposvar.html">Zipmeal Kaposvár</a></li>
+        <li><a href="zipmeal-web.html">Zipmeal web, eszközök és vezetőség</a></li>
+      </ul>
+    </div>
+
+    <p class="landing-note">A ZiPMEAL Lite nem hivatalos kliens: nem áll kapcsolatban a
+    ZiPMEAL szolgáltatással, a bejelentkezési adatok és az étlap a ZiPMEAL saját
+    rendszeréből származnak. Nyílt forráskódú (AGPL-3.0), reklámok és tracking nélkül.</p>
+  </article>
+</main>
+<footer class="landing-foot">
+  <p>ZiPMEAL Lite – nem hivatalos kliens · AGPL-3.0 ·
+  <a href="https://github.com/KecskeTech/zipmeal-lite">forráskód</a> ·
+  <a href="./">az alkalmazás</a></p>
+</footer>
+</body>
+</html>

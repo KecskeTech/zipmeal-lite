@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="hu" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f18">
+<script>
+  (function () {
+    var light = false;
+    try { light = localStorage.getItem('zm_theme') === 'light'; } catch (_) {}
+    if (light) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#f2f3fa');
+    }
+  })();
+</script>
+<title>Zipmeal Kaposvár – iskolai és óvodai étlap</title>
+<meta name="description" content="Zipmeal Kaposvár: iskolai és óvodai heti étlap, ebédválasztás és lemondás a ZiPMEAL Lite-tal. Nem hivatalos kliens a saját ZiPMEAL-fiókoddal, offline is.">
+<link rel="canonical" href="https://ziplite.kecske.win/zipmeal-kaposvar.html">
+<meta property="og:title" content="Zipmeal Kaposvár – ZiPMEAL Lite">
+<meta property="og:description" content="A kaposvári iskolai és óvodai étlap megnyitása a ZiPMEAL Lite-ban.">
+<meta property="og:url" content="https://ziplite.kecske.win/zipmeal-kaposvar.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="ZiPMEAL Lite">
+<meta property="og:locale" content="hu_HU">
+<meta property="og:image" content="https://ziplite.kecske.win/icon.svg">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Zipmeal Kaposvár – ZiPMEAL Lite",
+  "url": "https://ziplite.kecske.win/zipmeal-kaposvar.html",
+  "description": "Zipmeal Kaposvár: iskolai és óvodai heti étlap, ebédválasztás és lemondás a ZiPMEAL Lite-ban.",
+  "inLanguage": "hu",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "ZiPMEAL Lite",
+    "url": "https://ziplite.kecske.win/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "hu",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Hogyan nézhetem meg a Zipmeal kaposvári étlapját?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Jelentkezz be a ZiPMEAL Lite-ba a saját ZiPMEAL-fiókoddal, majd válaszd ki a kaposvári iskolához vagy óvodához tartozó étkezőt. A heti menü és a határidők utána azonnal megjelennek."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Ugyanaz a ZiPMEAL Lite működik Kaposváron és más városokban?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Igen. A ZiPMEAL Lite nem városhoz kötött: a fiókodhoz tartozó étkező adatai döntik el, melyik intézmény és melyik település étlapja jelenik meg, legyen szó Kaposvárról vagy más városról."
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<header class="landing-top">
+  <a class="landing-brand" href="./">ZiPMEAL <span>Lite</span></a>
+  <nav class="landing-nav" aria-label="Oldalak">
+    <a href="./">App</a>
+    <a href="zipmeal-bejelentkezes.html">Bejelentkezés</a>
+    <a href="zipmeal-etlap.html">Étlap</a>
+    <a href="zipmeal-zalaegerszeg.html">Zalaegerszeg</a>
+    <a href="zipmeal-kaposvar.html" aria-current="page">Kaposvár</a>
+    <a href="zipmeal-web.html">Web / eszközök</a>
+  </nav>
+</header>
+<main class="view landing">
+  <article class="landing-card">
+    <nav class="breadcrumbs" aria-label="Morzsamenü"><a href="./">Főoldal</a> › <span>Zipmeal Kaposvár</span></nav>
+    <h1>Zipmeal Kaposvár – iskolai és óvodai étlap</h1>
+    <p class="landing-lead">A kaposvári iskolai és óvodai étlap ugyanúgy érhető el, mint
+    bármely más településé: a saját ZiPMEAL-fiókoddal bejelentkezve, a fiókodhoz tartozó
+    étkezőt kiválasztva. A heti menü nem külön kaposvári adatbázisból jön.</p>
+
+    <h2>Zipmeal étlap Kaposváron – hogyan működik?</h2>
+    <p>A ZiPMEAL Lite a ZiPMEAL rendszerhez kapcsolódó kliens. Ez azt jelenti, hogy a
+    Kaposváron használt iskolai vagy óvodai étlap is a fiókodhoz tartozó étkezőn keresztül
+    jelenik meg. Nincs külön városi bejelentkezés, nincs külön regisztráció, és nem kell új
+    jelszót megjegyezned.</p>
+    <p>Ha az intézményed a ZiPMEAL rendszert használja, a heti menü, a választható menük
+    (például A/B ebéd), a választási és lemondási határidők, valamint a kártyacsippantás
+    ideje is ugyanúgy megjelenik, mint bármely más városban.</p>
+
+    <div class="landing-cta">
+      <a class="btn primary" href="./">Kaposvári étlap megnyitása</a>
+      <small>Bejelentkezés a meglévő ZiPMEAL-fiókkal</small>
+    </div>
+
+    <h2>Első lépések Kaposváron</h2>
+    <ol>
+      <li>Nyisd meg a <a href="./">ZiPMEAL Lite appot</a>.</li>
+      <li>Jelentkezz be a saját ZiPMEAL e-mail címeddel és jelszavaddal.</li>
+      <li>Szülői fióknál válaszd ki a kaposvári gyermeked étkezőjét.</li>
+      <li>Nézd át a heti étlapot, és válaszd ki vagy mondd le az ebédet a határidőig.</li>
+    </ol>
+
+    <h2>Választás, lemondás és határidők</h2>
+    <p>A napkártyákon látszó határidők intézményenként eltérhetnek, ezért mindig az ott
+    szereplő dátumot vedd figyelembe. A lemondás a lemondási határidőig visszavonható, a
+    választás pedig a választási határidőig módosítható. A lejárt határidő után a
+    kapcsolódó gombok szürkék.</p>
+    <p>A szüneti heteket az app automatikusan átugorja, így a kaposvári menünél sem kell
+    üres heteken végigkattintanod. A <b>Mai nap</b> gomb bármikor visszavisz az aktuális
+    hétre.</p>
+
+    <h2>Offline és megbízhatóság</h2>
+    <p>A korábban betöltött kaposvári étlap internet nélkül is megnyílik, mert az app a
+    böngésződben cache-eli. Offline módban a menü és a határidők láthatók, de a választás
+    és a lemondás nem elérhető. Amint újra van internet, a következő frissítés a friss
+    adatokat tölti be.</p>
+
+    <h2>Gyakori kérdések</h2>
+    <dl class="seo-faq">
+      <dt>Hogyan nézhetem meg a Zipmeal kaposvári étlapját?</dt>
+      <dd>Jelentkezz be a ZiPMEAL Lite-ba, és válaszd ki a kaposvári étkezőt. Utána
+      megjelenik a heti menü.</dd>
+      <dt>Ugyanaz az app működik más városokban is?</dt>
+      <dd>Igen. A fiókodhoz tartozó étkező adatai döntik el, melyik intézmény étlapja
+      jelenik meg.</dd>
+    </dl>
+
+    <div class="landing-related">
+      <h2>Kapcsolódó oldalak</h2>
+      <ul>
+        <li><a href="zipmeal-bejelentkezes.html">Zipmeal bejelentkezés</a></li>
+        <li><a href="zipmeal-etlap.html">Zipmeal étlap – heti menü</a></li>
+        <li><a href="zipmeal-zalaegerszeg.html">Zipmeal Zalaegerszeg</a></li>
+        <li><a href="zipmeal-web.html">Zipmeal web, eszközök és vezetőség</a></li>
+      </ul>
+    </div>
+
+    <p class="landing-note">A ZiPMEAL Lite nem hivatalos kliens: nem áll kapcsolatban a
+    ZiPMEAL szolgáltatással, és nem kaposvári önkormányzati szolgáltatás. Az étlap és a
+    rendelések a ZiPMEAL saját rendszeréből származnak. Nyílt forráskódú (AGPL-3.0).</p>
+  </article>
+</main>
+<footer class="landing-foot">
+  <p>ZiPMEAL Lite – nem hivatalos kliens · AGPL-3.0 ·
+  <a href="https://github.com/KecskeTech/zipmeal-lite">forráskód</a> ·
+  <a href="./">az alkalmazás</a></p>
+</footer>
+</body>
+</html>
