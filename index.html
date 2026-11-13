@@ -21,7 +21,7 @@
 <meta name="robots" content="index, follow">
 <meta name="keywords" content="zipmeal, zipmeal bejelentkezés, zipmeal étlap, zipmeal hu, zipmeal zalaegerszeg, zipmeal kaposvár, zipmeal web, zipmeal eszközök, zipmeal egyebek, zipmeal vezetőség, ZiPMEAL, ZiPMEAL lite, ziplite, zipmeal app, zipmeal étkezés, Zegesz menü, zegesz menu, Hungast étlap, hungast etlap, ebédválasztó, ebéd rendelés, menü, iskolai ebéd, iskolai ebéd lemondás, iskolai ebéd rendelés, menza befizetés, menza rendelés, iskolai menza, közétkeztetés, közétkeztetés étlap, óvodai étkezés, iskolai étkezés, étlap, ebéd lemondás, ebédbefizetés, ebéd választás, Budapest, Debrecen, Szeged, Miskolc, Pécs, Győr, Nyíregyháza, Kecskemét, Székesfehérvár, Szombathely, Szolnok, Tatabánya, Kaposvár, Érd, Veszprém, Békéscsaba, Zalaegerszeg, Sopron, Eger, Nagykanizsa, Dunaújváros, Hódmezővásárhely, Salgótarján, Cegléd, Baja, Esztergom">
 <link rel="canonical" href="https://ziplite.kecske.win/">
-<meta property="og:title" content="ZiPMEAL Lite – Zipmeal bejelentkezés, étlap és ebéd lemondás">
+<meta property="og:title" content="ZiPMEAL Lite - Zipmeal bejelentkezés, étlap és ebéd lemondás">
 <meta property="og:description" content="Nem hivatalos, offline is használható ZiPMEAL kliens: Zipmeal bejelentkezés, heti étlap, iskolai ebéd lemondás és menza befizetés egy helyen.">
 <meta property="og:url" content="https://ziplite.kecske.win/">
 <meta property="og:type" content="website">
@@ -29,7 +29,7 @@
 <meta property="og:locale" content="hu_HU">
 <meta property="og:image" content="https://ziplite.kecske.win/icon.svg">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="ZiPMEAL Lite – Zipmeal bejelentkezés és étlap">
+<meta name="twitter:title" content="ZiPMEAL Lite - Zipmeal bejelentkezés és étlap">
 <meta name="twitter:description" content="Nem hivatalos, offline is használható ZiPMEAL kliens: Zipmeal bejelentkezés, heti étlap, ebéd lemondás és menza befizetés egy helyen.">
 <meta name="twitter:image" content="https://ziplite.kecske.win/icon.svg">
 <script type="application/ld+json">
@@ -81,7 +81,7 @@
       "name": "Hol látható a Zegesz menü vagy a Hungast étlap?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "A ZiPMEAL app a közétkeztetési szolgáltatók heti étlapját – például a Zegesz menüt vagy a Hungast étlapot – a ZiPMEAL étkezési felületén keresztül, egy helyen jeleníti meg. A bejelentkezés után a heti étlapon napokra bontva látható a választható menü."
+        "text": "A ZiPMEAL app a közétkeztetési szolgáltatók heti étlapját - például a Zegesz menüt vagy a Hungast étlapot - a ZiPMEAL étkezési felületén keresztül, egy helyen jeleníti meg. A bejelentkezés után a heti étlapon napokra bontva látható a választható menü."
       }
     },
     {
@@ -105,7 +105,7 @@
       "name": "Elérhető a ZiPMEAL Lite Zalaegerszegen és Kaposváron?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Igen. Mivel a ZiPMEAL Lite a ZiPMEAL fiókhoz kapcsolódik, ott használható, ahol az iskolai vagy óvodai közétkeztetés a ZiPMEAL rendszerében elérhető – így Zalaegerszegen és Kaposváron is. A település nevét a bejelentkezés után a saját étkeződ adatai határozzák meg."
+        "text": "Igen. Mivel a ZiPMEAL Lite a ZiPMEAL fiókhoz kapcsolódik, ott használható, ahol az iskolai vagy óvodai közétkeztetés a ZiPMEAL rendszerében elérhető - így Zalaegerszegen és Kaposváron is. A település nevét a bejelentkezés után a saját étkeződ adatai határozzák meg."
       }
     },
     {
@@ -122,9 +122,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ZiPMEAL Lite">
-<title>ZiPMEAL Lite – Zipmeal bejelentkezés, étlap, ebéd lemondás</title>
+<title>ZiPMEAL Lite - Zipmeal bejelentkezés, étlap, ebéd lemondás</title>
 <link rel="manifest" href="manifest.json">
 <link rel="license" href="LICENSE">
+<link rel="preconnect" href="https://zipmeal.hu" crossorigin>
+<link rel="dns-prefetch" href="https://zipmeal.hu">
+<link rel="preload" href="app.js" as="script">
 <link rel="stylesheet" href="styles.css">
 <!-- Az ikon helyi (relatív) fájl: a régi raw.githubusercontent.com-os hivatkozás
      text/plain MIME-t és hibás type="image/x-icon"-t adott, ezért a böngészők
@@ -185,7 +188,7 @@
     </form>
   </div>
 
-  <!-- SEO / bevezető tartalom – csak kijelentkezve látszik, bejelentkezés után
+  <!-- SEO / bevezető tartalom - csak kijelentkezve látszik, bejelentkezés után
        a #main-view váltja. A keresőmotoroknak és az új látogatóknak szól. -->
   <div id="seo-block" class="view seo-block">
     <article class="seo-content">
@@ -216,13 +219,13 @@
       <h2 id="zipmeal-bejelentkezes">Zipmeal bejelentkezés a saját fiókoddal</h2>
       <p>A <b>Zipmeal bejelentkezés</b> a nyitóképernyő űrlapján történik, a ZiPMEAL
       fiókod e-mail címével és jelszavával. A jelszó kizárólag a zipmeal.hu szervereire
-      kerül, a munkamenet pedig a saját böngésződ tárolójában marad meg – ez az oldal
+      kerül, a munkamenet pedig a saját böngésződ tárolójában marad meg - ez az oldal
       saját szervert nem használ. Ha a hivatalos Zipmeal webes felületét keresed, az a
       <b>zipmeal.hu</b> oldalon érhető el; a ZiPMEAL Lite nem hivatalos, alternatív kliens.</p>
       <p>Sikeres bejelentkezés után szülői fióknál előbb az étkezőt (gyermeket) választod
       ki, majd betölt a heti <b>Zipmeal étlap</b>.</p>
 
-      <h2 id="zipmeal-etlap">Zipmeal étlap – heti menü, választás és lemondás</h2>
+      <h2 id="zipmeal-etlap">Zipmeal étlap - heti menü, választás és lemondás</h2>
       <p>A <b>Zipmeal étlap</b> a bejelentkezés után jelenik meg, egy hétre bontva:
       reggeli, ebéd és vacsora, azzal a nappal, amelyre tényleg van menü. A hónaphatáron
       átnyúló heteket is kezeli, az étel nélküli (szüneti) heteket pedig automatikusan
@@ -230,7 +233,7 @@
       étel, és ha a kártyádat már lecsippantották, az is, hogy hány órakor ettél.</p>
       <p>Az étel kiválasztása, az <b>iskolai ebéd lemondás</b> és a lemondás visszavonása
       néhány kattintás. A <b>menza befizetés</b> és a tényleges ebédrendelés továbbra is a
-      ZiPMEAL rendszerében történik – a ZiPMEAL Lite ezt kényelmesebben jeleníti meg.</p>
+      ZiPMEAL rendszerében történik - a ZiPMEAL Lite ezt kényelmesebben jeleníti meg.</p>
 
       <h2 id="zipmeal-zalaegerszeg">Zipmeal Zalaegerszeg</h2>
       <p>Ha Zalaegerszegen jársz iskolába vagy óvodába, és a közétkeztetés a ZiPMEAL
@@ -242,7 +245,7 @@
       <p>Ugyanígy működik a <b>Zipmeal Kaposvár</b> esetében is: a bejelentkezés után a
       kaposvári iskola vagy óvoda heti menüje jelenik meg, a választási és lemondási
       határidőkkel együtt. A ZiPMEAL Lite országosan használható, ahol a ZiPMEAL étkezési
-      rendszer jelen van – a települést mindig a saját étkeződ adatai határozzák meg.</p>
+      rendszer jelen van - a települést mindig a saját étkeződ adatai határozzák meg.</p>
 
       <h2 id="zipmeal-web">Zipmeal web, eszközök, egyebek és vezetőség</h2>
       <p>A hivatalos <b>Zipmeal web</b> felületének menüpontjai közé tartozik az
@@ -253,7 +256,7 @@
       Ha a hivatalos Zipmeal webes felületet vagy a vezetőség elérhetőségét keresed,
       látogass a <b>zipmeal.hu</b> oldalra.</p>
 
-      <h3>Közétkeztetés – városi étlap gyorsan</h3>
+      <h3>Közétkeztetés - városi étlap gyorsan</h3>
       <p>A közétkeztetési szolgáltatók (iskolai és óvodai menzák) étlapja a ZiPMEAL
       rendszerén keresztül érhető el. A ZiPMEAL Lite ezt teszi kényelmesebbé a
       szülők számára a nagyobb városokban, többek között: Budapest, Debrecen,
@@ -261,8 +264,8 @@
       Szombathely, Szolnok, Tatabánya, Kaposvár, Érd, Veszprém, Békéscsaba,
       Zalaegerszeg, Sopron, Eger, Nagykanizsa és Dunaújváros.</p>
       <h3>Zegesz menü, Hungast étlap és ZiPMEAL étkezés egy helyen</h3>
-      <p>A ZiPMEAL app a heti közétkeztetési étlapot – legyen szó akár
-      <b>Zegesz menüről</b> vagy <b>Hungast étlapról</b> – egyetlen, átlátható
+      <p>A ZiPMEAL app a heti közétkeztetési étlapot - legyen szó akár
+      <b>Zegesz menüről</b> vagy <b>Hungast étlapról</b> - egyetlen, átlátható
       felületen jeleníti meg. Így a <b>ZiPMEAL étkezés</b> menete egyszerű:
       bejelentkezés, a gyermek kiválasztása, majd az étel kiválasztása vagy
       lemondása néhány kattintással. A <b>zipmeal app</b> offline is használható,
@@ -287,10 +290,10 @@
 
       <h2 id="zipmeal-reszletes">Részletes oldalak</h2>
       <ul class="seo-pages">
-        <li><a href="zipmeal-bejelentkezes.html">Zipmeal bejelentkezés – lépésről lépésre</a></li>
-        <li><a href="zipmeal-etlap.html">Zipmeal étlap – heti menü, választás és lemondás</a></li>
-        <li><a href="zipmeal-zalaegerszeg.html">Zipmeal Zalaegerszeg – iskolai és óvodai étlap</a></li>
-        <li><a href="zipmeal-kaposvar.html">Zipmeal Kaposvár – iskolai és óvodai étlap</a></li>
+        <li><a href="zipmeal-bejelentkezes.html">Zipmeal bejelentkezés - lépésről lépésre</a></li>
+        <li><a href="zipmeal-etlap.html">Zipmeal étlap - heti menü, választás és lemondás</a></li>
+        <li><a href="zipmeal-zalaegerszeg.html">Zipmeal Zalaegerszeg - iskolai és óvodai étlap</a></li>
+        <li><a href="zipmeal-kaposvar.html">Zipmeal Kaposvár - iskolai és óvodai étlap</a></li>
         <li><a href="zipmeal-web.html">Zipmeal web, eszközök, egyebek és vezetőség</a></li>
       </ul>
 
@@ -384,6 +387,6 @@
     </svg>
   </button>
 
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
 </body>
 </html>
