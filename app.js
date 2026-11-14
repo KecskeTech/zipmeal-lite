@@ -337,7 +337,7 @@ function setOffline(flag, message) {
   if (banner) {
     banner.hidden = !flag;
     banner.textContent = message ||
-      'Offline mód – a becsült étlap látható. Az étel kiválasztása és a lemondás most nem elérhető.';
+      'Offline mód. A becsült étlap látható. Az étel kiválasztása és a lemondás most nem elérhető.';
   }
   document.body.classList.toggle('is-offline', !!flag);
 }
@@ -363,10 +363,10 @@ function fmtWeekRange(mondayIso, sundayIso) {
   const mName = m.toLocaleDateString('hu-HU', { month: 'long' });
   const sName = s.toLocaleDateString('hu-HU', { month: 'long' });
   if (m.getFullYear() !== s.getFullYear()) {
-    return `${m.getFullYear()}. ${mName} ${m.getDate()}. – ${s.getFullYear()}. ${sName} ${s.getDate()}.`;
+    return `${m.getFullYear()}. ${mName} ${m.getDate()} - ${s.getFullYear()}. ${sName} ${s.getDate()}.`;
   }
-  if (mName === sName) return `${mName} ${m.getDate()}. – ${s.getDate()}.`;
-  return `${mName} ${m.getDate()}. – ${sName} ${s.getDate()}.`;
+  if (mName === sName) return `${mName} ${m.getDate()} - ${s.getDate()}.`;
+  return `${mName} ${m.getDate()} - ${sName} ${s.getDate()}.`;
 }
 
 /* allergén kódok -> nevek, ha van szótár */
@@ -788,7 +788,7 @@ function mealCard(day, group, meal) {
   const cancelled = !!o?.cancelDate;
   let reason = '';
   if (!o) reason = `Erre a napra nincs rendelés (${group.label.toLowerCase()}).`;
-  else if (cancelled) reason = 'A nap le van mondva – előbb vond vissza a lemondást.';
+  else if (cancelled) reason = 'A nap le van mondva. Előbb vond vissza a lemondást.';
   else if (state.refreshing) reason = 'Frissítés folyamatban…';
   else if (state.offline) reason = 'Offline módban nem módosítható.';
   else if (isDeadlinePassed(o.selectMenuDeadline)) {
@@ -798,6 +798,7 @@ function mealCard(day, group, meal) {
   return `
     <button class="meal-choice${chosen ? ' selected' : ''}${cancelled ? ' cancelled' : ''}${isDeadlinePassed(o?.selectMenuDeadline) ? ' closed' : ''}"
             data-day="${day.dateKey}" data-group="${group.key}" data-meal="${esc(meal.id || '')}" data-menu="${esc(letter)}"
+            aria-pressed="${chosen ? 'true' : 'false'}"
             title="${esc(reason)}" ${disabled ? 'disabled' : ''}>
       <span class="meal-tag meal-tag-${group.key}">${esc(tag)}</span>
       <div class="meal-name">${mealNameHtml(meal.mealName)}</div>
@@ -840,7 +841,7 @@ function dayBadge(day) {
   const active = groups.filter((g) => !g.order.cancelDate);
   if (!active.length) return '<span class="day-badge cancelled">Lemondva</span>';
   if (active.every((g) => g.order.menuMeal?.chosen)) {
-    return '<span class="day-badge ok">✓ Választva</span>';
+    return '<span class="day-badge ok">Választva</span>';
   }
   return '<span class="day-badge none">Nincs választva</span>';
 }
@@ -852,11 +853,11 @@ function deadlineChips(day) {
   const parts = [];
   if (day.selectDeadline) {
     parts.push(`<span class="deadline${day.selectClosed ? ' expired' : ''}" title="Étel kiválasztásának / módosításának határideje">
-      ✎ Választás: ${esc(fmtDeadline(day.selectDeadline))}</span>`);
+      Választás: ${esc(fmtDeadline(day.selectDeadline))}</span>`);
   }
   if (day.cancelDeadline) {
     parts.push(`<span class="deadline${day.cancelClosed ? ' expired' : ''}" title="Ebéd lemondásának / visszavonásának határideje">
-      ✕ Lemondás: ${esc(fmtDeadline(day.cancelDeadline))}</span>`);
+      Lemondás: ${esc(fmtDeadline(day.cancelDeadline))}</span>`);
   }
   return parts.length ? `<div class="deadlines">${parts.join('')}</div>` : '';
 }
@@ -864,7 +865,7 @@ function deadlineChips(day) {
 function renderDayCard(day, today) {
   const d = new Date(day.iso + 'T12:00:00');
   const dayNum = d.getDate();
-  const weekday = d.toLocaleDateString('hu-HU', { weekday: 'short' });
+  const weekday = ['Vas', 'Hét', 'Ked', 'Sze', 'Csü', 'Pén', 'Szo'][d.getDay()];
   const month = d.toLocaleDateString('hu-HU', { month: 'long' });
   const isToday = day.iso === today;
   const cancelled = !!day.order?.cancelDate;
@@ -953,7 +954,9 @@ function renderDiners() {
           <span class="diner-name">${esc(name)}</span>
           ${sub ? `<span class="diner-sub">${esc(sub)}</span>` : ''}
         </span>
-        <span class="diner-arrow" aria-hidden="true">›</span>
+        <span class="diner-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+        </span>
       </button>`;
   }).join('');
 }
@@ -1298,7 +1301,7 @@ async function withBusy(fn) {
   }
   if (state.offline || !navigator.onLine) {
     setOffline(true);
-    setStatus('Offline módban nem lehet módosítani. Csatlakozz az internethez!');
+      setStatus('Offline módban nem lehet módosítani. Csatlakozz az internethez.');
     renderDays();
     return;
   }
@@ -1636,7 +1639,7 @@ function demoWeekRange(offset, withMeals) {
           id: `demo-${key}-${type}`,
           mealDate,
           mealType: type,
-          mealName: `${group} ${variant} mintaétel – ${key}`.trim(),
+            mealName: `${group} ${variant} mintaétel, ${key}`.trim(),
           energy: String(600 + (n++ % 250)),
           allergenes: '1,7,12',
         });
@@ -1660,7 +1663,7 @@ function demoWeekRange(offset, withMeals) {
           menuMeal: {
             id: `demo-order-${key}-${type}`,
             mealDate,
-            mealName: `${group} ${variant} mintaétel – ${key}`.trim(),
+          mealName: `${group} ${variant} mintaétel, ${key}`.trim(),
             mealType: type,
             chosen: variant === 'A' || !variant,
           },
@@ -1692,7 +1695,7 @@ async function demoLoadWeek(offset = 0, force = false, { skipEmpty = false } = {
   const withMeals = ((offset % 3) + 3) % 3 !== 1;
   state.weekOffset = offset;
   state.weekRange = weekRangeForOffset(offset);
-  setStatus('Demó adatok – bejelentkezés nélkül.');
+  setStatus('Demó adatok, bejelentkezés nélkül.');
   const week = demoWeekRange(offset, withMeals);
   const data = demoMerge([{ data: { menu: week.menu, orders: week.orders }, dataNext: null }]);
 

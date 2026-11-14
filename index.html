@@ -139,7 +139,14 @@
   <!-- LOGIN -->
   <div id="login-view" class="view login-view">
     <form id="login-form" class="login-card">
-      <div class="login-logo">🍽️</div>
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+          <path d="M7 2v20"/>
+          <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/>
+          <path d="M21 15v7"/>
+        </svg>
+      </div>
       <h1>ZiPMEAL <span>Lite</span></h1>
       <p class="subtitle">Ebédválasztás, ahogy kellene</p>
       <ul class="login-features">
@@ -161,7 +168,7 @@
           </svg>
           <span>
             <b>Gyors, egyszerű</b>
-            <small>Nincs telerakva szarral, nyomkövetés sincs.</small>
+            <small>Nincs tele reklámmal, nyomkövetés sincs.</small>
           </span>
         </li>
       </ul>
@@ -181,10 +188,10 @@
           <path d="M9 12l2 2 4-4"/>
         </svg>
         <span>A jelszó kizárólag a ZiPMEAL szervereire lesz elküldve, a bejelentkezés
-        pedig csak a saját eszközödön, a böngésző tárolójában (cookie / localStorage)
-        marad meg. Ez a kliens saját szervert nem használ.</span>
+        pedig csak a saját eszközödön, a böngésző tárolójában marad meg. Ez a kliens
+        saját szervert nem használ.</span>
       </p>
-      <p class="login-vibecoded">❗Ez az alkalmazás vibe codeolva van.❗</p>
+      <p class="login-vibecoded">Ez az alkalmazás vibe codeolva van.</p>
     </form>
   </div>
 
@@ -307,7 +314,14 @@
   <!-- DINER / CHILD SELECTOR (parent accounts) -->
   <div id="diner-view" class="view diner-view" hidden>
     <div class="diner-card">
-      <div class="diner-logo">👨‍👩‍👧</div>
+      <div class="diner-logo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
       <h1>Étkező kiválasztása</h1>
       <p class="subtitle">Melyik gyermeked ebédjét szeretnéd kezelni?</p>
       <div id="diner-list" class="diner-list"></div>
@@ -359,12 +373,16 @@
 
     <div class="view">
       <div class="week-nav">
-        <button id="prev-week" class="btn nav" aria-label="Előző hét">‹</button>
+        <button id="prev-week" class="btn nav" aria-label="Előző hét">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
         <span id="week-label" class="week-nav-label" aria-live="polite">
           <b id="week-number"></b>
           <small id="week-dates"></small>
         </span>
-        <button id="next-week" class="btn nav" aria-label="Következő hét">›</button>
+        <button id="next-week" class="btn nav" aria-label="Következő hét">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
 
       <main id="days" class="days"></main>
