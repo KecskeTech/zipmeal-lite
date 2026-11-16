@@ -97,7 +97,7 @@ button, input { font: inherit; }
 }
 
 .view { max-width: 1280px; margin: 0 auto; padding: 24px; }
-@media (max-width: 640px) { .view { padding: 16px; } }
+@media (max-width: 640px) { .view { padding: 12px; } }
 
 /* ---------- gombok ---------- */
 .btn {
@@ -482,10 +482,10 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
   .week-nav { margin: 8px 0 8px; }
   .week-nav .btn.nav {
     position: fixed;
-    top: calc(50svh - 20px);
+    top: calc(50svh - 18px);
     transform: none;
     z-index: 15;
-    width: 40px; height: 40px;
+    width: 36px; height: 36px;
     background: var(--nav-surface);
     border: 1px solid var(--line-strong);
     box-shadow: var(--shadow-lg);
@@ -503,6 +503,8 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
   }
   /* A fix nyilak a kártya külső paddingjére ülnek, nem a tartalomra. */
   .week-days { padding: 0 16px; }
+  .day-head { padding: 12px; }
+  .day-body { padding: 12px; }
 }
 
 .day-card {
