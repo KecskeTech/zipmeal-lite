@@ -62,9 +62,9 @@
   --warn-line: #e6d3a5;
   --toast-bg: #2b2820;
   --toast-text: #fffdf7;
-  --shadow: 0 1px 2px rgba(23, 21, 15, .05);
+  --shadow: none;
   --shadow-lg: 0 14px 34px rgba(23, 21, 15, .14);
-  --card-shadow: 0 1px 2px rgba(23, 21, 15, .05);
+  --card-shadow: none;
 }
 
 * { box-sizing: border-box; }
@@ -200,14 +200,11 @@ button, input { font: inherit; }
   text-align: left;
 }
 .login-logo {
-  width: 44px; height: 44px;
-  display: grid; place-items: center;
-  background: var(--primary-soft);
+  display: flex; align-items: center;
   color: var(--primary);
-  border-radius: 10px;
 }
 .login-logo svg {
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   fill: none; stroke: currentColor; stroke-width: 1.75;
   stroke-linecap: round; stroke-linejoin: round;
 }
@@ -292,20 +289,16 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
   text-align: left;
 }
 .diner-logo {
-  width: 44px; height: 44px;
-  display: grid; place-items: center;
-  background: var(--primary-soft);
+  display: flex; align-items: center;
   color: var(--primary);
-  border-radius: 10px;
 }
 .diner-logo svg {
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   fill: none; stroke: currentColor; stroke-width: 1.75;
   stroke-linecap: round; stroke-linejoin: round;
 }
 .diner-card h1 {
   margin: 4px 0 0;
-  font-family: var(--font-display);
   font-size: 1.5rem; font-weight: 600;
   letter-spacing: 0;
   color: var(--text-strong);
@@ -472,16 +465,8 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
 
 .week-group {
   margin: 0 0 24px;
-  padding: 16px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 14px;
 }
 .week-group:last-child { margin-bottom: 8px; }
-.week-group.week-current {
-  background: var(--surface-2);
-  border-color: var(--line-strong);
-}
 .week-days {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
@@ -515,11 +500,9 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
   .week-nav-label small { font-size: .76rem; }
   .week-group {
     margin: 0 0 16px;
-    padding: 12px;
-    border-radius: 14px;
   }
   /* A fix nyilak saját sávot kapnak: a kártyák nem csúsznak alájuk. */
-  .week-days { padding: 0 20px; }
+  .week-days { padding: 0 32px; }
 }
 
 .day-card {
@@ -757,7 +740,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
 }
 .seo-content h2 {
   margin: 0 0 10px;
-  font-family: var(--font-display);
   font-size: 1.3rem; font-weight: 600;
   letter-spacing: 0;
   color: var(--text-strong);
@@ -814,7 +796,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
 }
 .landing-card h1 {
   margin: 4px 0 10px;
-  font-family: var(--font-display);
   font-size: 1.5rem;
   line-height: 1.3;
   letter-spacing: 0;
@@ -823,7 +804,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
 }
 .landing-card h2 {
   margin: 26px 0 8px;
-  font-family: var(--font-display);
   font-size: 1.2rem;
   letter-spacing: 0;
   font-weight: 600;
