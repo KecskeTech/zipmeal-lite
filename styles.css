@@ -493,16 +493,16 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
     backdrop-filter: none;
   }
   .week-nav .btn.nav:active { transform: scale(.96); }
-  #prev-week { left: calc(8px + env(safe-area-inset-left, 0px)); }
-  #next-week { right: calc(8px + env(safe-area-inset-right, 0px)); }
+  #prev-week { left: calc(2px + env(safe-area-inset-left, 0px)); }
+  #next-week { right: calc(2px + env(safe-area-inset-right, 0px)); }
   .week-nav-label { line-height: 1.1; }
   .week-nav-label b { font-size: 1.1rem; }
   .week-nav-label small { font-size: .76rem; }
   .week-group {
     margin: 0 0 16px;
   }
-  /* A fix nyilak saját sávot kapnak: a kártyák nem csúsznak alájuk. */
-  .week-days { padding: 0 32px; }
+  /* A fix nyilak a kártya külső paddingjére ülnek, nem a tartalomra. */
+  .week-days { padding: 0 16px; }
 }
 
 .day-card {
