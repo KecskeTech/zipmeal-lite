@@ -377,7 +377,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
   .topbar-inner { gap: 8px; padding-top: 8px; padding-bottom: 8px; }
   .topbar .btn.small { padding: 6px 9px; }
   .topbar .btn-icon { margin-right: 4px; }
-  .topbar .avatar { width: 34px; height: 34px; font-size: .8rem; }
 }
 
 /* ---------- offline sáv ---------- */
@@ -391,15 +390,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
 }
 @media (max-width: 640px) {
   .offline-banner { top: 51px; }
-}
-.avatar {
-  width: 36px; height: 36px; flex: none;
-  display: grid; place-items: center;
-  border-radius: 8px;
-  background: var(--surface-3);
-  color: var(--primary);
-  font-weight: 600; font-size: .85rem;
-  border: 1px solid var(--line);
 }
 .user-info { flex: 1; display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
 .user-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-strong); }

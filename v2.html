@@ -130,7 +130,6 @@
   <div id="main-view" hidden>
     <header class="topbar">
       <div class="view topbar-inner">
-        <span id="user-avatar" class="avatar">?</span>
         <div class="user-info">
           <span id="user-name" class="user-name"></span>
         </div>
@@ -150,12 +149,12 @@
           </svg><span class="topbar-btn-text">Gyermek</span>
         </button>
         <div class="install-wrap">
-          <button id="install-btn" class="btn ghost small icon-only" type="button"
+          <button id="install-btn" class="btn ghost small" type="button"
                   aria-label="Alkalmazás telepítése" title="Alkalmazás telepítése"
                   aria-expanded="false" aria-controls="install-hint">
             <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/>
-            </svg>
+            </svg><span class="topbar-btn-text">Letöltés</span>
           </button>
           <div id="install-hint" class="settings-menu install-hint" hidden>
             <div class="install-hint-title">Alkalmazás telepítése</div>
@@ -184,12 +183,12 @@
             <p class="settings-note">A V2 kísérleti nézet. A V1 a megszokott heti kártyás felület.</p>
           </div>
         </div>
-        <button id="logout-btn" class="btn ghost small" title="Kilépés" aria-label="Kilépés">
+        <button id="logout-btn" class="btn ghost small icon-only" title="Kilépés" aria-label="Kilépés">
           <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <path d="M16 17l5-5-5-5"/>
             <path d="M21 12H9"/>
-          </svg><span class="topbar-btn-text">Kilépés</span>
+          </svg>
         </button>
       </div>
     </header>

@@ -117,7 +117,8 @@ function initInstall() {
   const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
     window.navigator.standalone === true;
   if (standalone) {
-    btn.hidden = true;
+    const wrap = btn.closest('.install-wrap');
+    if (wrap) wrap.hidden = true;
     return;
   }
 
@@ -136,7 +137,8 @@ function initInstall() {
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     setOpen(false);
-    btn.hidden = true;
+    const wrap = btn.closest('.install-wrap');
+    if (wrap) wrap.hidden = true;
   });
 
   btn.addEventListener('click', async (e) => {
@@ -524,8 +526,6 @@ function setActiveDiner(me) {
     fullName: me.fullName,
   };
   document.getElementById('user-name').textContent = me.nickname || me.fullName || '';
-  document.getElementById('user-avatar').textContent =
-    (me.fullName || '?').split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   document.getElementById('switch-diner-btn').hidden = !state.isParent;
   document.body.classList.toggle('is-parent', !!state.isParent);
   sessionCache.save();
