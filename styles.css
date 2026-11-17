@@ -668,8 +668,7 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
 .meal-choice:hover:not(:disabled) { border-color: var(--line-strong); background: var(--surface-3); }
 .meal-choice:disabled { cursor: default; opacity: .6; }
 .meal-choice.closed:not(.selected) { opacity: .45; }
-.day-cancel.closed { opacity: .5; }
-.meal-choice.closed:disabled, .day-cancel.closed:disabled { cursor: not-allowed; }
+.meal-choice.closed:disabled { cursor: not-allowed; }
 
 .meal-tag {
   display: inline-flex; align-items: center; gap: 6px;
@@ -711,8 +710,6 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
   position: absolute; top: 12px; right: 12px;
   font-size: .68rem; font-weight: 500; color: var(--danger);
 }
-
-.day-cancel { width: 100%; margin-top: 12px; }
 
 .foot {
   text-align: center; color: var(--muted);
@@ -851,4 +848,79 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
 @media (max-width: 640px) {
   .seo-block { padding: 0 16px 24px; }
   .seo-content { padding: 20px 18px; }
+}
+
+/* ---------- kompakt lemondás a napkártya fejlécében (V1) ----------
+   A korábbi teljes szélességű gomb helyett egy kis fejlécgomb: mobilon ikon,
+   szélesebb kijelzőn rövid felirat. A megerősítés külön sorban jelenik meg. */
+.day-cancel-head {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--danger);
+  font: 500 .76rem/1 inherit;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, color .15s, opacity .15s;
+}
+.day-cancel-head:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+.day-cancel-head:disabled { opacity: .4; cursor: default; }
+.day-cancel-head.is-uncancel { color: var(--ok); }
+.day-cancel-head.is-uncancel:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--line-strong);
+}
+.day-cancel-glyph { display: grid; place-items: center; }
+.day-cancel-glyph svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.day-cancel-label { white-space: nowrap; }
+.badge-short { display: none; }
+
+.day-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--danger-soft);
+  border-bottom: 1px solid var(--danger-line);
+  font-size: .82rem;
+  color: var(--text);
+}
+.day-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+@media (max-width: 640px) {
+  /* Mobilon a kiválasztott nap státusza elég egy zöld pont: így a fejlécben
+     marad hely a "Lemondás" feliratnak. A hiányzó/lemondott állapot szövege
+     marad, mert az igényel figyelmet. */
+  .day-card:not(.v2-day) .day-badge.ok { font-size: 0; gap: 0; }
+  .day-card:not(.v2-day) .day-badge.ok::before { width: 7px; height: 7px; }
+  .day-card:not(.v2-day) .badge-long { display: none; }
+  .day-card:not(.v2-day) .badge-short { display: inline; }
+  .day-head:not(.v2-day-head) { gap: 7px; }
+  .day-cancel-head { height: 30px; padding: 0 7px; gap: 3px; }
+  .day-cancel-label { font-size: .68rem; }
+  .day-cancel-glyph svg { width: 13px; height: 13px; }
+  .day-confirm { padding: 10px 12px; }
 }

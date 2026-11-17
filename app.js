@@ -885,7 +885,7 @@ function dayBadge(day) {
   if (active.every((g) => g.order.menuMeal?.chosen)) {
     return '<span class="day-badge ok">Választva</span>';
   }
-  return '<span class="day-badge none">Nincs választva</span>';
+  return '<span class="day-badge none"><span class="badge-long">Nincs választva</span><span class="badge-short">Hiányzik</span></span>';
 }
 
 /* A választási és a lemondási határidő külön dátum lehet – mindkettőt kiírjuk,
@@ -904,6 +904,9 @@ function deadlineChips(day) {
   return parts.length ? `<div class="deadlines">${parts.join('')}</div>` : '';
 }
 
+/* A lemondás megerősítését váró nap (YYYY-MM-DD), közös a v1 és v2 nézetben. */
+let pendingCancelKey = null;
+
 function renderDayCard(day, today) {
   const d = new Date(day.iso + 'T12:00:00');
   const dayNum = d.getDate();
@@ -911,6 +914,7 @@ function renderDayCard(day, today) {
   const month = d.toLocaleDateString('hu-HU', { month: 'long' });
   const isToday = day.iso === today;
   const cancelled = !!day.order?.cancelDate;
+  const confirming = pendingCancelKey === day.iso;
 
   // A lemondás a nap egészére szól (ebéd), ezért csak akkor jelenik meg,
   // ha erre a napra tényleg van rendelés.
@@ -921,6 +925,22 @@ function renderDayCard(day, today) {
   else if (day.cancelClosed) cancelReason = `A lemondási határidő lejárt (${fmtDeadline(day.cancelDeadline)}).`;
   else if (state.busy) cancelReason = 'Feldolgozás…';
 
+  const cancelIcon = cancelled
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+  // Kompakt lemondás a nap fejlécében: a felirat balra, az X jobbra kerül.
+  // Így nem foglalja a kártya alját egy teljes szélességű gomb.
+  const cancelAction = day.order ? `
+    <button class="day-cancel-head${cancelled ? ' is-uncancel' : ''}${day.cancelClosed ? ' closed' : ''}"
+            data-day="${day.dateKey}" data-action="${cancelled ? 'uncancel' : 'cancel'}"
+            aria-label="${cancelled ? 'Lemondás visszavonása' : 'Ebéd lemondása'}"
+            title="${esc(cancelReason || (cancelled ? 'Lemondás visszavonása' : 'Ebéd lemondása'))}"
+            ${cancelReason ? 'disabled' : ''}>
+      <span class="day-cancel-label">${cancelled ? 'Visszavonás' : 'Lemondás'}</span>
+      <span class="day-cancel-glyph">${cancelIcon}</span>
+    </button>` : '';
+
   return `
     <section class="day-card${isToday ? ' day-today' : ''}${isUnselected(day) ? ' day-unselected' : ''}"
              data-date="${day.iso}">
@@ -928,16 +948,19 @@ function renderDayCard(day, today) {
         <div class="day-num"><b>${dayNum}</b><small>${esc(weekday)}</small></div>
         <span class="day-title">${esc(month)}${isToday ? ' <span class="today-tag">Ma</span>' : ''}</span>
         ${dayBadge(day)}
+        ${cancelAction}
       </div>
+      ${confirming && !cancelled && day.order ? `
+        <div class="day-confirm" role="group" aria-label="Lemondás megerősítése">
+          <span>Biztosan lemondod ezt az ebédet?</span>
+          <span class="day-confirm-actions">
+            <button class="btn danger small" data-cancel-confirm="${day.dateKey}">Igen, lemondom</button>
+            <button class="btn ghost small" data-cancel-dismiss="${day.iso}">Mégse</button>
+          </span>
+        </div>` : ''}
       <div class="day-body">
         ${deadlineChips(day)}
         ${(day.groups || []).map((group) => mealGroupBlock(day, group)).join('')}
-        ${day.order ? `
-        <button class="btn ${cancelled ? 'primary' : 'danger'} day-cancel${day.cancelClosed ? ' closed' : ''}"
-                data-day="${day.dateKey}" data-action="${cancelled ? 'uncancel' : 'cancel'}"
-                title="${esc(cancelReason)}" ${cancelReason ? 'disabled' : ''}>
-          ${cancelled ? 'Mégis kérem (visszavonás)' : 'Ebéd lemondása'}
-        </button>` : ''}
       </div>
     </section>`;
 }
@@ -953,7 +976,6 @@ const WEEKDAY_SHORT = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
    kell külön állapotban tartani. */
 const expandedDays = new Set();
 let autoExpandedRange = null;
-let pendingCancelKey = null;
 
 function resetV2Ui() {
   expandedDays.clear();
@@ -1683,6 +1705,7 @@ DINERS_EL.addEventListener('click', async (e) => {
 let pinDir = 0;
 
 function navigateWeek(dir) {
+  pendingCancelKey = null;
   if (state.stayPinned) {
     if (dir === pinDir) return Promise.resolve(); // ugyanabba az irányba már nincs mit tenni
     state.stayPinned = false;
@@ -1838,6 +1861,7 @@ DAYS_EL.addEventListener('click', (e) => {
    következő ételes) napkártyára görget. */
 async function jumpToToday() {
   if (!state.diner) return;
+  pendingCancelKey = null;
   state.stayPinned = false;
   pinDir = 0;
   state.autoScrolled = false;
@@ -1869,6 +1893,19 @@ document.getElementById('week-strip')?.addEventListener('click', (e) => {
   if (btn) jumpToDay(btn.dataset.stripDay);
 });
 
+/* Lemondás-akció a kompakt fejlécgombhoz és a v2 ikonhoz. Lemondásnál előbb
+   megerősítést kérünk, hogy egy téves koppintás ne mondja le az ebédet. */
+function handleCancelAction(btn) {
+  const day = dayInfo(btn.dataset.day);
+  if (btn.dataset.action === 'cancel') {
+    pendingCancelKey = pendingCancelKey === day.iso ? null : day.iso;
+    renderDays();
+  } else {
+    pendingCancelKey = null;
+    withBusy(() => uncancelDay(day));
+  }
+}
+
 DAYS_EL.addEventListener('click', (e) => {
   // V2: nap kinyitása / összecsukása.
   const toggle = e.target.closest('[data-day-toggle]');
@@ -1876,18 +1913,15 @@ DAYS_EL.addEventListener('click', (e) => {
     toggleV2Day(toggle.dataset.dayToggle);
     return;
   }
-  // V2: lemondás-ikon. Lemondásnál előbb megerősítést kérünk, hogy egy
-  // téves koppintás ne mondja le a következő napi ebédet.
+  // Lemondás ikon a nap fejlécében (V1), illetve a v2 sorában.
+  const headCancel = e.target.closest('.day-cancel-head');
+  if (headCancel && !headCancel.disabled) {
+    handleCancelAction(headCancel);
+    return;
+  }
   const cancelIcon = e.target.closest('.v2-cancel-icon');
   if (cancelIcon && !cancelIcon.disabled) {
-    const day = dayInfo(cancelIcon.dataset.day);
-    if (cancelIcon.dataset.action === 'cancel') {
-      pendingCancelKey = pendingCancelKey === day.iso ? null : day.iso;
-      renderDays();
-    } else {
-      pendingCancelKey = null;
-      withBusy(() => uncancelDay(day));
-    }
+    handleCancelAction(cancelIcon);
     return;
   }
   const confirmCancel = e.target.closest('[data-cancel-confirm]');
@@ -1911,11 +1945,6 @@ DAYS_EL.addEventListener('click', (e) => {
     const group = (day.groups || []).find((g) => g.key === mealBtn.dataset.group);
     withBusy(() => chooseMeal(day, group?.order || day.order, mealBtn.dataset.menu));
     return;
-  }
-  const cancelBtn = e.target.closest('.day-cancel');
-  if (cancelBtn && !cancelBtn.disabled) {
-    const day = dayInfo(cancelBtn.dataset.day);
-    withBusy(() => cancelBtn.dataset.action === 'cancel' ? cancelDay(day) : uncancelDay(day));
   }
 });
 
