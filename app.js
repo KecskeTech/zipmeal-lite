@@ -477,10 +477,15 @@ function fmtWeekRange(mondayIso, sundayIso) {
   return `${mName} ${m.getDate()} - ${sName} ${s.getDate()}.`;
 }
 
-/* allergén kódok -> nevek, ha van szótár */
+/* allergén kódok -> nevek, ha van szótár. A Zipmeal „Tej / laktóz”
+   összevont címkéjét „Tej” néven jelenítjük meg: a hivatalos allergén a tej,
+   a laktóz inkább intolerancia. */
 function allergeneNames(str, dict) {
   if (!str) return '';
-  return str.split(',').map((c) => dict?.[c.trim()] || c.trim()).join(', ');
+  return str.split(',').map((c) => {
+    const name = String(dict?.[c.trim()] || c.trim()).trim();
+    return /^tej\s*\/\s*lakt[óo]z$/i.test(name) ? 'Tej' : name;
+  }).join(', ');
 }
 
 /* ---------- data fetch ---------- */
@@ -2119,7 +2124,7 @@ function demoMerge(payloads) {
     'Ebéd B': 'lunch', Uzsonna: 'snack', Vacsora: 'dinner',
   };
   data.allergenes = {
-    1: 'Glutén', 3: 'Tojás', 7: 'Tej / laktóz', 10: 'Mustár', 12: 'Kén-dioxid',
+    1: 'Glutén', 3: 'Tojás', 7: 'Tej', 10: 'Mustár', 12: 'Kén-dioxid',
   };
   return data;
 }
