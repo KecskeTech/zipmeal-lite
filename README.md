@@ -81,6 +81,14 @@ mezőből csak a választási betűt küldjük a `choose-meal` kérésben, tehá
 "Ebéd A" értékéből "A" lesz. Reggeli és vacsora esetén ez üres, és a kód ilyenkor
 "A"-t küld.
 
+## Beta felület
+
+A kísérleti, átdolgozott heti nézet a `/beta` címen érhető el
+(`https://ziplite.kecske.win/beta`). Ugyanaz az `app.js` és cache-logika fut,
+mint az éles nézetben. A `beta.html` `data-beta="1"` attribútuma kapcsolja be a
+fejléc alatti heti csíkot, az összecsukható napokat és a sorba tett lemondásikont.
+Az éles főoldalt ez nem érinti. A beta `noindex`, így nem kerül a keresőbe.
+
 ## Fejlesztői demó API és fiók nélkül
 
 A böngésző konzoljából hamis étlap tölthető be, hogy kipróbálható legyen a reggeli

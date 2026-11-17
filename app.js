@@ -19,6 +19,12 @@
 
 const API = 'https://zipmeal.hu/api';
 
+/* A kísérleti (beta) felület a /beta címen érhető el. Ugyanez az app.js fut
+   mindkét helyen; a beta.html data-beta="1" attribútuma kapcsolja be a heti
+   csíkot és az összecsukható napokat. Így a cache-, API- és offline-logika
+   közös marad, az éles nézetet pedig nem érinti. */
+const BETA = document.documentElement.dataset.beta === '1';
+
 /* ---------- token storage ---------- */
 const store = {
   get access() { return localStorage.getItem('zm_access'); },
@@ -175,6 +181,7 @@ function logout() {
   state.weekRange = null;
   state.profile = null;
   state.autoScrolled = false;
+  resetBetaUi();
   cache.clear(); // offline másolat törlése kijelentkezéskor
   setOffline(false);
   showView('login');
@@ -751,7 +758,8 @@ function showView(name) {
   document.getElementById('login-view').hidden = name !== 'login';
   document.getElementById('diner-view').hidden = name !== 'diner';
   document.getElementById('main-view').hidden = name !== 'main';
-  document.getElementById('seo-block').hidden = name !== 'login';
+  const seo = document.getElementById('seo-block');
+  if (seo) seo.hidden = name !== 'login';
 }
 
 function setStatus(msg) {
@@ -900,8 +908,240 @@ function renderDayCard(day, today) {
     </section>`;
 }
 
+/* ---------- beta: heti csík + összecsukható napok ----------
+   A beta nézet a heti áttekintést egy kattintható nap-csíkba teszi a fejléc
+   alá, a napokat pedig összecsukható sorokként rajzolja ki. Csak a nyitott
+   nap mutatja a részletes ételválasztót, így a hét egy képernyőn átlátható. */
+
+const WEEKDAY_SHORT = ['V', 'H', 'K', 'Sze', 'Cs', 'P', 'Szo'];
+
+/* A nyitva tartott napok (YYYY-MM-DD). A render újraépíti a DOM-ot, ezért
+   kell külön állapotban tartani. */
+const expandedDays = new Set();
+let autoExpandedRange = null;
+let pendingCancelKey = null;
+
+function resetBetaUi() {
+  expandedDays.clear();
+  pendingCancelKey = null;
+  autoExpandedRange = null;
+}
+
+/* Egy nap állapota a csíkhoz és a sor badge-éhez. */
+function betaDayStatus(day) {
+  const groups = (Array.isArray(day.groups) ? day.groups : []).filter((g) => g.order);
+  if (!groups.length) return { cls: 'off', label: 'Nincs rendelés' };
+  const active = groups.filter((g) => !g.order.cancelDate);
+  if (!active.length) return { cls: 'cancelled', label: 'Lemondva' };
+  if (active.every((g) => g.order.menuMeal?.chosen)) return { cls: 'ok', label: 'Választva' };
+  return { cls: 'todo', label: 'Nincs választva' };
+}
+
+/* A kiválasztott ételek (leggyakrabban csak az ebéd) a sor összefoglalójához. */
+function chosenMeals(day) {
+  const out = [];
+  for (const g of day.groups || []) {
+    const o = g.order;
+    if (!o || o.cancelDate || !o.menuMeal?.chosen) continue;
+    const letter = mealVariant(o.menuMeal.mealType);
+    const meal = (g.menus || []).find((m) => mealVariant(m.mealType) === letter);
+    const name = meal?.mealName || o.menuMeal?.mealName;
+    if (name) out.push({ group: g.key, name });
+  }
+  return out;
+}
+
+/* A sorban látható rövid ételösszefoglaló: az ebéd, ha van, különben az első
+   kiválasztott étkezés. Választás nélkül a hiányzó döntésre utal. */
+function betaDaySummary(day) {
+  if (day.order?.cancelDate) return 'Lemondva';
+  const chosen = chosenMeals(day);
+  const meal = chosen.find((c) => c.group === 'lunch') || chosen[0];
+  if (meal) return meal.name;
+  const hasOrder = (day.groups || []).some((g) => g.order && !g.order.cancelDate);
+  return hasOrder ? 'Válaszd ki az ételt' : 'Nincs rendelés erre a napra';
+}
+
+/* A sorban megjelenő, leginkább releváns határidő: választás, ha még nincs
+   étel; lemondás, ha már van; lemondott napnál a visszavonás. */
+function betaRowDeadline(day, past) {
+  if (past || !day.order || day.order.consumedDate) return null;
+  const cancelled = !!day.order.cancelDate;
+  const chosen = (day.groups || []).some((g) => g.order && !g.order.cancelDate && g.order.menuMeal?.chosen);
+  if (cancelled) {
+    return day.cancelDeadline
+      ? { label: 'Visszavonás', iso: day.cancelDeadline, closed: day.cancelClosed } : null;
+  }
+  if (!chosen) {
+    return day.selectDeadline
+      ? { label: 'Választás', iso: day.selectDeadline, closed: day.selectClosed } : null;
+  }
+  return day.cancelDeadline
+    ? { label: 'Lemondás', iso: day.cancelDeadline, closed: day.cancelClosed } : null;
+}
+
+/* Ugyanaz a letiltási logika, mint a nagy kártyán. */
+function betaCancelReason(day) {
+  if (!day.order) return 'Erre a napra nincs rendelés.';
+  if (day.order.consumedDate) return 'Az ebéd már elfogyasztva.';
+  if (state.offline) return 'Offline módban nem módosítható.';
+  if (day.cancelClosed) return `A lemondási határidő lejárt (${fmtDeadline(day.cancelDeadline)}).`;
+  if (state.busy) return 'Feldolgozás…';
+  return '';
+}
+
+/* Nyitáskor (és hétenként egyszer) a mai, illetve a következő ételes nap
+   nyitva indul, hogy az app megnyitása után egyből látszódjon az étel. */
+function autoExpandBeta(days, range, today, current) {
+  if (autoExpandedRange === range.monday) return;
+  autoExpandedRange = range.monday;
+  const target = (current && days.find((d) => d.iso === today)) ||
+    days.find((d) => d.iso > today) || days[0];
+  // Csak akkor nyitjuk ki, ha tényleg dönteni kell. A kiválasztott nap
+  // összecsukva is mutatja az ételt, így a hét egyben átlátható marad.
+  if (target && betaDayStatus(target).cls === 'todo') expandedDays.add(target.iso);
+}
+
+function renderBetaStrip(days, today) {
+  const el = document.getElementById('week-strip');
+  if (!el) return;
+  if (!days.length) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  // A progress a mai és jövőbeli napokat számolja: a múlt hiányzó választása
+  // már nem feladat, ne rontsa a "kész" arányt.
+  const relevant = days.filter((d) => d.iso >= today);
+  const counted = relevant.length ? relevant : days;
+  const selected = counted.filter((d) => betaDayStatus(d).cls === 'ok').length;
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="strip-head">
+      <span class="strip-title">Heti áttekintés</span>
+      <span class="strip-progress">${selected}/${counted.length} kiválasztva</span>
+    </div>
+    <div class="strip-days" role="group" aria-label="A hét napjai">
+      ${days.map((day) => {
+        const d = new Date(day.iso + 'T12:00:00');
+        const st = betaDayStatus(day);
+        const isToday = day.iso === today;
+        const past = day.iso < today;
+        const label = d.toLocaleDateString('hu-HU', { month: 'long', day: 'numeric', weekday: 'long' });
+        const statusText = past && st.cls === 'todo' ? 'nem választott' : st.label.toLowerCase();
+        return `<button class="strip-day${isToday ? ' is-today' : ''}${past ? ' is-past' : ''}"
+                        data-strip-day="${day.iso}"
+                        ${isToday ? 'aria-current="date"' : ''}
+                        aria-label="${esc(label)} – ${esc(statusText)}"
+                        title="${esc(label)} – ${esc(statusText)}">
+          <span class="strip-wd">${esc(WEEKDAY_SHORT[d.getDay()])}</span>
+          <span class="strip-dot dot-${st.cls}" aria-hidden="true"></span>
+          <span class="strip-date">${d.getDate()}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderBetaDayCard(day, today, showMonth = true) {
+  const d = new Date(day.iso + 'T12:00:00');
+  const dayNum = d.getDate();
+  const weekday = ['Vas', 'Hét', 'Ked', 'Sze', 'Csü', 'Pén', 'Szo'][d.getDay()];
+  const month = d.toLocaleDateString('hu-HU', { month: 'long' });
+  const isToday = day.iso === today;
+  const past = day.iso < today;
+  const st = betaDayStatus(day);
+  const expanded = expandedDays.has(day.iso);
+  const cancelled = !!day.order?.cancelDate;
+  const deadline = betaRowDeadline(day, past);
+  const badgeText = past && st.cls === 'todo' ? 'Nem választott' : st.label;
+  const badgeClass = st.cls === 'ok' ? 'ok' : st.cls === 'cancelled' ? 'cancelled' : 'none';
+  const cancelReason = betaCancelReason(day);
+  const confirming = pendingCancelKey === day.iso;
+
+  const cancelIcon = cancelled
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+
+  const cancelButton = day.order ? `
+    <button class="beta-cancel-icon${cancelled ? ' is-uncancel' : ''}"
+            data-day="${day.dateKey}"
+            data-action="${cancelled ? 'uncancel' : 'cancel'}"
+            aria-label="${cancelled ? 'Lemondás visszavonása' : 'Ebéd lemondása'}"
+            title="${esc(cancelReason || (cancelled ? 'Lemondás visszavonása' : 'Ebéd lemondása'))}"
+            ${cancelReason ? 'disabled' : ''}>${cancelIcon}</button>` : '';
+
+  return `
+    <section class="day-card beta-day${isToday ? ' day-today' : ''}${past ? ' is-past' : ''}${!past && isUnselected(day) ? ' day-unselected' : ''}${expanded ? ' is-open' : ''}"
+             data-date="${day.iso}">
+      <div class="day-head beta-day-head">
+        <button class="beta-day-toggle" data-day-toggle="${day.iso}" aria-expanded="${expanded}">
+          <span class="day-num"><b>${dayNum}</b><small>${esc(weekday)}</small></span>
+          <span class="beta-day-main">
+            ${showMonth ? `<span class="day-title">${esc(month)}</span>` : ''}
+            <span class="beta-day-summary${st.cls === 'todo' ? ' is-missing' : ''}${cancelled ? ' is-cancelled' : ''}">${isToday ? '<span class="today-tag">Ma</span> ' : ''}${esc(betaDaySummary(day))}</span>
+            ${deadline ? `<span class="beta-row-deadline${deadline.closed ? ' expired' : ''}">${esc(deadline.label)}: ${esc(fmtDeadline(deadline.iso))}</span>` : ''}
+          </span>
+          <span class="day-badge ${badgeClass}">${esc(badgeText)}</span>
+          <span class="beta-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+          </span>
+        </button>
+        ${cancelButton}
+      </div>
+      ${confirming && !cancelled ? `
+        <div class="beta-confirm" role="group" aria-label="Lemondás megerősítése">
+          <span>Biztosan lemondod ezt az ebédet?</span>
+          <span class="beta-confirm-actions">
+            <button class="btn danger small" data-cancel-confirm="${day.dateKey}">Igen, lemondom</button>
+            <button class="btn ghost small" data-cancel-dismiss="${day.iso}">Mégse</button>
+          </span>
+        </div>` : ''}
+      <div class="day-body"${expanded ? '' : ' hidden'}>
+        ${deadlineChips(day)}
+        ${(day.groups || []).map((group) => mealGroupBlock(day, group)).join('')}
+      </div>
+    </section>`;
+}
+
+function renderBetaWeek(days, range, today, current) {
+  autoExpandBeta(days, range, today, current);
+  renderBetaStrip(days, today);
+  let prevMonth = '';
+  const cards = days.map((day) => {
+    const month = new Date(day.iso + 'T12:00:00').getMonth();
+    const showMonth = month !== prevMonth;
+    prevMonth = month;
+    return renderBetaDayCard(day, today, showMonth);
+  }).join('');
+  DAYS_EL.innerHTML = `
+    <section class="week-group${current ? ' week-current' : ''}" data-week-offset="${state.weekOffset}">
+      <div class="week-days beta-days">
+        ${cards}
+      </div>
+    </section>`;
+}
+
+function toggleBetaDay(iso) {
+  if (expandedDays.has(iso)) expandedDays.delete(iso);
+  else expandedDays.add(iso);
+  renderDays();
+}
+
+/* A csíkban egy napra koppintva kinyitjuk és odagörgetünk. */
+function jumpToDay(iso) {
+  expandedDays.add(iso);
+  renderDays();
+  requestAnimationFrame(() => {
+    const el = DAYS_EL.querySelector(`.day-card[data-date="${iso}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 /* Nyitáskor az aznapi ebédre (ha nincs, a következő elérhető napra) ugrunk. */
 function focusToday(days) {
+  // A beta kompakt hetében a mai nap görgetés nélkül is látszik, így a
+  // fejléc alatti csík és a hét áttekintése nyitáskor a helyén marad.
+  if (BETA) return;
   if (state.autoScrolled || state.weekOffset !== 0) return;
   const today = todayIso();
   const target = days.find((d) => d.iso === today) || days.find((d) => d.iso > today);
@@ -922,12 +1162,24 @@ function renderDays() {
   if (weekDatesEl) weekDatesEl.textContent = fmtWeekRange(range.monday, range.sunday);
 
   if (!days.length) {
+    if (BETA) {
+      const strip = document.getElementById('week-strip');
+      if (strip) {
+        strip.hidden = true;
+        strip.innerHTML = '';
+      }
+    }
     DAYS_EL.innerHTML = '<p class="foot">Nincs menü ezen a héten.</p>';
     return;
   }
 
   const today = todayIso();
   const current = today >= range.monday && today <= range.sunday;
+  if (BETA) {
+    renderBetaWeek(days, range, today, current);
+    focusToday(days);
+    return;
+  }
   DAYS_EL.innerHTML = `
     <section class="week-group${current ? ' week-current' : ''}" data-week-offset="${state.weekOffset}">
       <div class="week-days">
@@ -971,6 +1223,7 @@ async function chooseDiner(cardId) {
   state.data = null;
   state.dataNext = null;
   state.autoScrolled = false;
+  resetBetaUi();
   showView('main');
   await loadWeek(0, false, { skipEmpty: true, dir: 1 });
 }
@@ -1364,6 +1617,7 @@ document.getElementById('switch-diner-btn').addEventListener('click', () => {
   state.months = {};
   state.weekOffset = 0;
   state.weekRange = null;
+  resetBetaUi();
   setStatus('');
   DINER_ERROR_EL.hidden = true;
   renderDiners();
@@ -1560,13 +1814,61 @@ async function jumpToToday() {
     cards.find((el) => el.dataset.date > today) ||
     cards[0];
   if (!target) return;
+  const targetIso = target.dataset.date;
+  if (BETA && !expandedDays.has(targetIso)) {
+    expandedDays.add(targetIso);
+    renderDays();
+  }
   state.autoScrolled = true;
-  requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  requestAnimationFrame(() => {
+    const el = DAYS_EL.querySelector(`.day-card[data-date="${targetIso}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 document.getElementById('today-btn').addEventListener('click', jumpToToday);
 
+/* Beta: a fejléc alatti hét-csík napjaira koppintva kinyílik és odagörget
+   a megfelelő napi sor. */
+document.getElementById('week-strip')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-strip-day]');
+  if (btn) jumpToDay(btn.dataset.stripDay);
+});
+
 DAYS_EL.addEventListener('click', (e) => {
+  // Beta: nap kinyitása / összecsukása.
+  const toggle = e.target.closest('[data-day-toggle]');
+  if (toggle) {
+    toggleBetaDay(toggle.dataset.dayToggle);
+    return;
+  }
+  // Beta: lemondás-ikon. Lemondásnál előbb megerősítést kérünk, hogy egy
+  // téves koppintás ne mondja le a következő napi ebédet.
+  const cancelIcon = e.target.closest('.beta-cancel-icon');
+  if (cancelIcon && !cancelIcon.disabled) {
+    const day = dayInfo(cancelIcon.dataset.day);
+    if (cancelIcon.dataset.action === 'cancel') {
+      pendingCancelKey = pendingCancelKey === day.iso ? null : day.iso;
+      renderDays();
+    } else {
+      pendingCancelKey = null;
+      withBusy(() => uncancelDay(day));
+    }
+    return;
+  }
+  const confirmCancel = e.target.closest('[data-cancel-confirm]');
+  if (confirmCancel) {
+    const day = dayInfo(confirmCancel.dataset.cancelConfirm);
+    pendingCancelKey = null;
+    withBusy(() => cancelDay(day));
+    return;
+  }
+  const dismissCancel = e.target.closest('[data-cancel-dismiss]');
+  if (dismissCancel) {
+    pendingCancelKey = null;
+    renderDays();
+    return;
+  }
   const mealBtn = e.target.closest('.meal-choice');
   if (mealBtn && !mealBtn.disabled) {
     const day = dayInfo(mealBtn.dataset.day);
@@ -1628,18 +1930,22 @@ function demoWeekRange(offset, withMeals) {
     // hétvégén nincs menü
     if (day.getDay() !== 0 && day.getDay() !== 6) {
       const key = localIso(day);
-      // A valós API ugyanazt a napot jelöli 23:00-kor (a dayIso() a helyi
-      // napot olvassa le belőle), ezért a demó is így adja: "2026-11-02T23:00".
-      const mealDate = key + 'T23:00:00.000Z';
+      // A valós API a helyi napot az ELŐZŐ nap 23:00 UTC-jeként jelöli
+      // (pl. november 2. = "2026-11-01T23:00:00.000Z"), ezért a demó is így
+      // adja: a dayIso() így a helyes helyi napot olvassa le belőle.
+      const prev = new Date(day);
+      prev.setDate(prev.getDate() - 1);
+      const mealDate = localIso(prev) + 'T23:00:00.000Z';
       const orderDate = mealDate;
       for (const type of types) {
         const group = mealGroupOf(type);
         const variant = mealVariant(type);
+        const label = mealDisplayType(group, type);
         menu.push({
           id: `demo-${key}-${type}`,
           mealDate,
           mealType: type,
-            mealName: `${group} ${variant} mintaétel, ${key}`.trim(),
+          mealName: `${label} mintaétel, ${key}`.trim(),
           energy: String(600 + (n++ % 250)),
           allergenes: '1,7,12',
         });
@@ -1663,7 +1969,7 @@ function demoWeekRange(offset, withMeals) {
           menuMeal: {
             id: `demo-order-${key}-${type}`,
             mealDate,
-          mealName: `${group} ${variant} mintaétel, ${key}`.trim(),
+            mealName: `${label} mintaétel, ${key}`.trim(),
             mealType: type,
             chosen: variant === 'A' || !variant,
           },
@@ -1688,6 +1994,7 @@ function demoMerge(payloads) {
 }
 
 const realLoadWeek = loadWeek;
+let demoStatusTimer = 0;
 
 async function demoLoadWeek(offset = 0, force = false, { skipEmpty = false } = {}) {
   const prevOffset = state.weekOffset;
@@ -1696,6 +2003,8 @@ async function demoLoadWeek(offset = 0, force = false, { skipEmpty = false } = {
   state.weekOffset = offset;
   state.weekRange = weekRangeForOffset(offset);
   setStatus('Demó adatok, bejelentkezés nélkül.');
+  clearTimeout(demoStatusTimer);
+  demoStatusTimer = setTimeout(() => setStatus(''), 2500);
   const week = demoWeekRange(offset, withMeals);
   const data = demoMerge([{ data: { menu: week.menu, orders: week.orders }, dataNext: null }]);
 

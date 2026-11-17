@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="hu" data-theme="dark" data-beta="1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f18">
+<script>
+  /* Téma a CSS betöltése előtt: a sötét az alapértelmezett, a mentett
+     világos beállítást még a stíluslap előtt alkalmazzuk (nincs villanás). */
+  (function () {
+    var light = false;
+    try { light = localStorage.getItem('zm_theme') === 'light'; } catch (_) {}
+    if (light) {
+      document.documentElement.setAttribute('data-theme', 'light');
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', '#f2f3fa');
+    }
+  })();
+</script>
+<meta name="description" content="ZiPMEAL Lite kísérleti (beta) felület: heti áttekintés és összecsukható napok.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://ziplite.kecske.win/beta">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ZiPMEAL Lite Beta">
+<title>ZiPMEAL Lite - Beta</title>
+<link rel="manifest" href="manifest.json">
+<link rel="license" href="LICENSE">
+<link rel="preconnect" href="https://zipmeal.hu" crossorigin>
+<link rel="dns-prefetch" href="https://zipmeal.hu">
+<link rel="preload" href="app.js" as="script">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="beta.css">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="login-view" class="view login-view">
+    <form id="login-form" class="login-card">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+          <path d="M7 2v20"/>
+          <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/>
+          <path d="M21 15v7"/>
+        </svg>
+      </div>
+      <h1>ZiPMEAL <span>Lite</span><span class="beta-flag">BÉTA</span></h1>
+      <p class="subtitle">Ebédválasztás, ahogy kellene</p>
+      <ul class="login-features">
+        <li>
+          <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <path d="M12 20h.01"/>
+            <path d="M2 2l20 20"/>
+          </svg>
+          <span>
+            <b>Offline működés</b>
+            <small>A már betöltött étlap internet nélkül is elérhető.</small>
+          </span>
+        </li>
+        <li>
+          <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13 2L3 14h8l-1 8 11-13h-8l1-7z"/>
+          </svg>
+          <span>
+            <b>Gyors, egyszerű</b>
+            <small>Nincs tele reklámmal, nyomkövetés sincs.</small>
+          </span>
+        </li>
+      </ul>
+      <div class="login-fields">
+        <label>Email
+          <input type="email" id="login-email" autocomplete="email" required>
+        </label>
+        <label>Jelszó
+          <input type="password" id="login-password" autocomplete="current-password" required>
+        </label>
+      </div>
+      <button type="submit" class="btn primary lg">Bejelentkezés</button>
+      <p id="login-error" class="error" hidden></p>
+      <p class="login-disclaimer">
+        <svg class="disclaimer-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        <span>A jelszó kizárólag a ZiPMEAL szervereire lesz elküldve, a bejelentkezés
+        pedig csak a saját eszközödön, a böngésző tárolójában marad meg. Ez a kliens
+        saját szervert nem használ.</span>
+      </p>
+      <p class="login-vibecoded">Ez az alkalmazás vibe codeolva van.</p>
+    </form>
+  </div>
+
+  <!-- DINER / CHILD SELECTOR (parent accounts) -->
+  <div id="diner-view" class="view diner-view" hidden>
+    <div class="diner-card">
+      <div class="diner-logo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <h1>Étkező kiválasztása</h1>
+      <p class="subtitle">Melyik gyermeked ebédjét szeretnéd kezelni?</p>
+      <div id="diner-list" class="diner-list"></div>
+      <p id="diner-error" class="error" hidden></p>
+      <button id="diner-logout" class="btn ghost small">
+        <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <path d="M16 17l5-5-5-5"/>
+          <path d="M21 12H9"/>
+        </svg>Kilépés
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main-view" hidden>
+    <header class="topbar">
+      <div class="view topbar-inner">
+        <span id="user-avatar" class="avatar">?</span>
+        <div class="user-info">
+          <span id="user-name" class="user-name"></span>
+        </div>
+        <button id="today-btn" class="btn ghost small" title="Ugrás a mai napra">
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18"/>
+            <circle cx="12" cy="16" r="2"/>
+          </svg>Mai nap
+        </button>
+        <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" hidden>
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>Gyermek
+        </button>
+        <button id="logout-btn" class="btn ghost small" title="Kilépés">
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <path d="M16 17l5-5-5-5"/>
+            <path d="M21 12H9"/>
+          </svg>Kilépés
+        </button>
+      </div>
+    </header>
+
+    <p id="offline-banner" class="offline-banner" hidden></p>
+
+    <!-- A heti áttekintés a fejléc ALATT, de még a hét-navigáció előtt. -->
+    <div class="view beta-strip-view">
+      <div id="week-strip" class="beta-strip" hidden></div>
+    </div>
+
+    <div class="view">
+      <div class="week-nav">
+        <button id="prev-week" class="btn nav" aria-label="Előző hét">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span id="week-label" class="week-nav-label" aria-live="polite">
+          <b id="week-number"></b>
+          <small id="week-dates"></small>
+        </span>
+        <button id="next-week" class="btn nav" aria-label="Következő hét">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <main id="days" class="days"></main>
+      <p id="status" class="toast" hidden></p>
+      <footer class="foot">
+        <span>ZiPMEAL Lite - kísérleti (beta) nézet · nem hivatalos kliens · AGPL-3.0 ·
+        <a href="https://github.com/KecskeTech/zipmeal-lite" target="_blank" rel="noopener">forráskód</a></span>
+        <span class="foot-seo"><a href="/">Vissza a normál felületre</a></span>
+      </footer>
+    </div>
+  </div>
+
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Világos mód" title="Világos mód" aria-pressed="true">
+    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  </button>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

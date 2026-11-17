@@ -1,8 +1,8 @@
 // ZiPMEAL Lite service worker – app shell cache + offline fallback.
 // Az API válaszokat szándékosan NEM cache-eljük itt: az étlapot az app
 // saját localStorage cache-ből jeleníti meg offline módban.
-const CACHE = 'zipmeal-lite-v47';
-const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.json', './icon.svg', './LICENSE', './robots.txt', './sitemap.xml', './zipmeal-bejelentkezes.html', './zipmeal-etlap.html', './zipmeal-zalaegerszeg.html', './zipmeal-kaposvar.html', './zipmeal-web.html'];
+const CACHE = 'zipmeal-lite-v48';
+const SHELL = ['./', './index.html', './beta.html', './styles.css', './beta.css', './app.js', './manifest.json', './icon.svg', './LICENSE', './robots.txt', './sitemap.xml', './zipmeal-bejelentkezes.html', './zipmeal-etlap.html', './zipmeal-zalaegerszeg.html', './zipmeal-kaposvar.html', './zipmeal-web.html'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -34,12 +34,15 @@ self.addEventListener('fetch', (e) => {
   // Csak a saját origin statikus fájljait kezeljük; az API-t hagyjuk online menni.
   if (url.origin !== self.location.origin) return;
 
-  // Navigáció: hálózat first, hiba esetén a cache-elt index.html.
+  // Navigáció: hálózat first, hiba esetén a cache-elt index.html (a beta
+  // útvonalon a beta.html, hogy offline is a kísérleti nézet jöjjön vissza).
   if (req.mode === 'navigate') {
+    const isBeta = /\/beta(\.html|\/)?$/.test(url.pathname);
+    const fallback = isBeta ? './beta.html' : './index.html';
     e.respondWith(
       fetch(req)
         .then((res) => { cachePut(req, res); return res; })
-        .catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
+        .catch(() => caches.match(req).then((r) => r || caches.match(fallback)))
     );
     return;
   }
