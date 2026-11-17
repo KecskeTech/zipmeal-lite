@@ -36,8 +36,9 @@ https://ziplite.kecske.win/
   `localStorage` cache-éből jelenik meg. Módosítás offline nem lehetséges.
 
 ## Telepítés
-- Ez egy webes alkalmazás (PWA). Androidon a három pöttyös menün belül a 
-Telepítés és parancsikon létrehozása opción belül a telepítés gombbal telepíthető.
+
+Bejelentkezés után az oldal tetején található letöltés gombbal
+lehet letölteni az alkalmazást.
 
 ## Offline működés
 
