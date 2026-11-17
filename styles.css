@@ -1011,3 +1011,38 @@ input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px
   }
   body.is-parent .topbar .btn:not(.icon-only) .btn-icon { margin: 0; }
 }
+
+/* ---------- telepítés gomb + login SEO linkek ---------- */
+.install-wrap { position: relative; flex: none; }
+.install-hint-title {
+  margin-bottom: 8px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.install-hint p {
+  margin: 8px 0 0;
+  font-size: .72rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.install-hint p b { color: var(--text); font-weight: 600; }
+
+/* A keresőmotoroknak és a látogatóknak szóló, diszkrét linkek a login alján. */
+.login-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin-top: 2px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: .7rem;
+}
+.login-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.login-links a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}

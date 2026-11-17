@@ -17,35 +17,27 @@ https://ziplite.kecske.win/
 - Havi étlap lekérdezése egy hétre bontva. A felső nyilakkal hétre előre és hátra
   lehet lépni, a hónaphatáron átnyúló heteket is kezeli. Minden hét sorszámot és
   dátumtartományt kap.
-- Mai nap gomb a felső sávban. Bármelyik hétnél jársz, visszaugrik az aktuális
-  hétre, és a mai napkártyára görget. Ha nincs mai menü, a következő ételes napra
-  ugrik.
-- Az étel nélküli, szüneti heteket a nyilak automatikusan átugorják. Ha egy héten
-  egyáltalán nincs menü, például őszi vagy téli szünetben, a navigáció a következő,
-  visszafelé pedig az előző ételes hétre lép. Ha abban az irányban már nincs több
-  ételes hét, például a nyár elején, a nézet az ételes héten marad.
+- Minden betöltéskor a mai napra ugrik (nem úgy mint az eredeti zipmeal)
+- Az étel nélküli hetek át vannak ugorva
 - Reggeli, ebéd és vacsora. Az orders válasz `mealDict` mezője alapján a napkártya
-  minden olyan étkezést megjelenít, amelyre az adott napon tényleg van menü. Ha
-  nincs reggeli vagy vacsora, az a blokk nem jelenik meg, ilyenkor csak az ebéd
-  látszik, pontosan úgy, ahogy korábban.
-- Az étel kiválasztása, lemondása és a lemondás visszavonása.
+  minden olyan étkezést megjelenít, amelyre az adott napon van menü.
+- Étel kiválasztása, lemondása és a lemondás visszavonása.
 - A választási (`selectMenuDeadline`) és lemondási (`cancelDeadline`) határidő külön
   jelenik meg. A lejárt határidő után az érintett gombok szürkék és letiltottak.
-- A kártyacsippantás ideje. Ha az ebéd kártyádat már lecsippantották, az ebéd
-  fejlécében megjelenik, hány órakor ettél, például "12:35-kor ettél". Az adat az
+- Kiírja, hogy mikor csippantottad le az ebéd kártyádat. Az adat az
   orders válasz `consumedDate` mezőjéből jön, ugyanúgy, ahogy az eredeti kliensnél.
-- Nyitáskor automatikusan az aznapi ebédre ugrik. Ha nincs mai menü, a következő
-  napra ugrik.
 - Cache-elt indulás. Ha korábban már be voltál jelentkezve, az app a mentett
-  étlapot azonnal megjeleníti, a mai napra görgetve, a login képernyő helyett, és
-  a háttérben frissít. A "Frissítés…" jelzés alul látszik. Ha közben változott a
-  menü, automatikusan az új étlap jelenik meg.
-- A kiválasztás nélküli napokat piros kiemelés jelöli.
+  étlapot azonnal megjeleníti, és a háttérben frissít. A "Frissítés…" jelzés alul látszik. 
+  Ha közben változott a menü, automatikusan az új étlap jelenik meg.
 - Szülői fióknál belépés után kiválasztható a gyermek, és később is váltható.
 - Sötét téma alapértelmezésként. A jobb alsó sarokban lévő gombbal világosra
   váltható, és a választás megmarad a böngészőben.
 - Telepíthető PWA. Offline módban a korábban betöltött étlap a böngésző
   `localStorage` cache-éből jelenik meg. Módosítás offline nem lehetséges.
+
+## Telepítés
+- Ez egy webes alkalmazás (PWA). Androidon a három pöttyös menün belül a 
+Telepítés és parancsikon létrehozása opción belül a telepítés gombbal telepíthető.
 
 ## Offline működés
 
@@ -117,8 +109,7 @@ Utána nyisd meg a http://localhost:8000 címet.
 
 ## Vibe coding
 
-Ez a projekt vibe codeolva van. A funkciók nagy része AI-asszisztens segítségével,
-gyors iterációkkal született, emberi ötletadás ~~és utóellenőrzés~~ mellett. A kód
+Ez 99%-ban AI agentekkel készült (kivétel ez a readme). A kód
 ennek megfelelően egyszerű, olvasható és könnyen módosítható.
 
 ## Licenc

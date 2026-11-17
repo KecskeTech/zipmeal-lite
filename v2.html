@@ -91,6 +91,13 @@
         saját szervert nem használ.</span>
       </p>
       <p class="login-vibecoded">Ez az alkalmazás vibe codeolva van.</p>
+      <nav class="login-links" aria-label="Zipmeal oldalak">
+        <a href="zipmeal-zalaegerszeg.html">Zipmeal Zalaegerszeg</a>
+        <a href="zipmeal-kaposvar.html">Zipmeal Kaposvár</a>
+        <a href="zipmeal-etlap.html">Zipmeal étlap</a>
+        <a href="zipmeal-bejelentkezes.html">Zipmeal bejelentkezés</a>
+        <a href="zipmeal-web.html">Zipmeal web</a>
+      </nav>
     </form>
   </div>
 
@@ -132,7 +139,7 @@
             <rect x="3" y="4" width="18" height="18" rx="2"/>
             <path d="M16 2v4M8 2v4M3 10h18"/>
             <circle cx="12" cy="16" r="2"/>
-          </svg><span class="topbar-btn-text">Mai nap</span>
+          </svg><span class="topbar-btn-text">Ma</span>
         </button>
         <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" aria-label="Étkező váltása" hidden>
           <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -142,6 +149,21 @@
             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg><span class="topbar-btn-text">Gyermek</span>
         </button>
+        <div class="install-wrap">
+          <button id="install-btn" class="btn ghost small icon-only" type="button"
+                  aria-label="Alkalmazás telepítése" title="Alkalmazás telepítése"
+                  aria-expanded="false" aria-controls="install-hint">
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/>
+            </svg>
+          </button>
+          <div id="install-hint" class="settings-menu install-hint" hidden>
+            <div class="install-hint-title">Alkalmazás telepítése</div>
+            <p><b>iPhone / iPad:</b> Oszd meg az oldalt, majd válaszd a „Főképernyőhöz adás” lehetőséget.</p>
+            <p><b>Android / Chrome:</b> Nyisd meg a böngésző menüjét, és válaszd a „Telepítés” vagy „Alkalmazás telepítése” pontot.</p>
+            <p><b>Desktop Chrome / Edge:</b> A címjósáv jobb szélén lévő telepítés ikon, vagy Menü → Telepítés.</p>
+          </div>
+        </div>
         <div class="settings-wrap">
           <button id="settings-btn" class="btn ghost small icon-only" type="button"
                   aria-label="Beállítások" title="Beállítások"

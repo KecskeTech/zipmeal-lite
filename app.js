@@ -69,10 +69,9 @@ function initTheme() {
 
 initTheme();
 
-/* ---------- beállítások menü (v2) ----------
+/* ---------- beállítások menü ----------
    A fogaskerék a topbarban kis dropdownot nyit; ebben van a V1/V2 felület-
-   kapcsoló. Csak a v2.html tartalmazza ezeket az elemeket, ezért itt minden
-   hivatkozás opcionális. */
+   kapcsoló. Mindkét nézet tartalmazza, de a hivatkozások opcionálisak. */
 function initSettingsMenu() {
   const btn = document.getElementById('settings-btn');
   const menu = document.getElementById('settings-menu');
@@ -85,6 +84,10 @@ function initSettingsMenu() {
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
+    const installHint = document.getElementById('install-hint');
+    if (installHint) installHint.hidden = true;
+    const installBtn = document.getElementById('install-btn');
+    if (installBtn) installBtn.setAttribute('aria-expanded', 'false');
     setOpen(menu.hidden);
   });
 
@@ -101,6 +104,71 @@ function initSettingsMenu() {
 }
 
 initSettingsMenu();
+
+/* ---------- telepítés (PWA) ----------
+   Chromiumon a beforeinstallprompt natív telepítő párbeszédjét nyitja.
+   iOS/Safari és Firefox esetén nincs ilyen esemény, ezért rövid útmutatót
+   mutatunk. Telepített (standalone) módban a gomb nem jelenik meg. */
+function initInstall() {
+  const btn = document.getElementById('install-btn');
+  const hint = document.getElementById('install-hint');
+  if (!btn || !hint) return;
+
+  const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+    window.navigator.standalone === true;
+  if (standalone) {
+    btn.hidden = true;
+    return;
+  }
+
+  let deferredPrompt = null;
+
+  const setOpen = (open) => {
+    hint.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  };
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    setOpen(false);
+    btn.hidden = true;
+  });
+
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (deferredPrompt) {
+      const prompt = deferredPrompt;
+      deferredPrompt = null;
+      setOpen(false);
+      try { await prompt.prompt(); } catch (_) { /* megszakítva */ }
+      return;
+    }
+    // Nincs natív prompt (iOS/Safari, Firefox): útmutatót mutatunk.
+    const settingsMenu = document.getElementById('settings-menu');
+    if (settingsMenu) settingsMenu.hidden = true;
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) settingsBtn.setAttribute('aria-expanded', 'false');
+    setOpen(hint.hidden);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (hint.hidden) return;
+    if (!e.target.closest('.install-wrap')) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || hint.hidden) return;
+    setOpen(false);
+    btn.focus();
+  });
+}
+
+initInstall();
 
 /* ---------- offline cache (localStorage) ----------
    A havi orders válasz és a munkamenet-adatai localStorage-ba kerülnek, hogy
