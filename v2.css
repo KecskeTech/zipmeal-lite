@@ -1,9 +1,9 @@
-/* ZiPMEAL Lite - kísérleti (beta) felület.
-   Csak a beta.html tölti be a styles.css után, így az éles nézetet nem érinti.
+/* ZiPMEAL Lite - kísérleti (v2) felület.
+   Csak a v2.html tölti be a styles.css után, így az éles nézetet nem érinti.
    Minden szín a styles.css design tokenjeiből jön (sötét/világos téma). */
 
-/* BÉTA jelzés a login címsorban. */
-.beta-flag {
+/* V2 jelzés a login címsorban. */
+.v2-flag {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 7px;
@@ -19,9 +19,9 @@
 }
 
 /* A csík a fejléc alatt, a hét-navigáció előtt. */
-.beta-strip-view { padding-top: 10px; padding-bottom: 0; }
+.v2-strip-view { padding-top: 10px; padding-bottom: 0; }
 
-.beta-strip {
+.v2-strip {
   max-width: 780px;
   margin: 0 auto;
   padding: 12px;
@@ -99,7 +99,7 @@
 .strip-dot.dot-off { background: transparent; border: 1px solid var(--line-strong); }
 
 /* A napok vékony, összecsukható sorai. */
-.week-days.beta-days {
+.week-days.v2-days {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -108,12 +108,12 @@
   max-width: 780px;
   margin: 0 auto;
 }
-.beta-day { scroll-margin-top: 80px; }
-.beta-day:hover { border-color: var(--line); }
-.beta-day.is-open:hover { border-color: var(--line); }
+.v2-day { scroll-margin-top: 80px; }
+.v2-day:hover { border-color: var(--line); }
+.v2-day.is-open:hover { border-color: var(--line); }
 
-.beta-day-head { padding: 0; align-items: stretch; }
-.beta-day-toggle {
+.v2-day-head { padding: 0; align-items: stretch; }
+.v2-day-toggle {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -128,15 +128,15 @@
   text-align: left;
   cursor: pointer;
 }
-.beta-day-main {
+.v2-day-main {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.beta-day .day-title { flex: none; font-size: .86rem; }
-.beta-day-summary {
+.v2-day .day-title { flex: none; font-size: .86rem; }
+.v2-day-summary {
   font-size: .84rem;
   line-height: 1.35;
   color: var(--text-strong);
@@ -145,33 +145,33 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.beta-day-summary.is-missing { color: var(--danger); }
-.beta-day-summary.is-cancelled { color: var(--danger); text-decoration: line-through; }
-.beta-row-deadline {
+.v2-day-summary.is-missing { color: var(--danger); }
+.v2-day-summary.is-cancelled { color: var(--danger); text-decoration: line-through; }
+.v2-row-deadline {
   font-size: .7rem;
   font-weight: 400;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.beta-row-deadline.expired {
+.v2-row-deadline.expired {
   color: var(--muted);
   text-decoration: line-through;
   opacity: .55;
 }
-.beta-day .day-badge { flex: none; }
+.v2-day .day-badge { flex: none; }
 /* A kiválasztott nap státusza elég egy zöld pont: a szöveg csak a
    figyelmet igénylő eseteknél (hiányzó választás, lemondva) jelenik meg.
    Így a sorban marad hely az étel nevének és a határidőnek. */
-.beta-day .day-badge.ok { font-size: 0; gap: 0; }
-.beta-day .day-badge.ok::before { width: 7px; height: 7px; }
-.beta-chevron {
+.v2-day .day-badge.ok { font-size: 0; gap: 0; }
+.v2-day .day-badge.ok::before { width: 7px; height: 7px; }
+.v2-chevron {
   flex: none;
   display: grid;
   place-items: center;
   color: var(--muted);
   transition: transform .15s;
 }
-.beta-chevron svg {
+.v2-chevron svg {
   width: 16px;
   height: 16px;
   fill: none;
@@ -180,10 +180,10 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.beta-day.is-open .beta-chevron { transform: rotate(90deg); }
+.v2-day.is-open .v2-chevron { transform: rotate(90deg); }
 
 /* Lemondás: egyetlen ikon a sorban, nem piros gomb minden nap alatt. */
-.beta-cancel-icon {
+.v2-cancel-icon {
   flex: none;
   align-self: center;
   width: 32px;
@@ -198,7 +198,7 @@
   cursor: pointer;
   transition: background-color .15s, border-color .15s, color .15s, opacity .15s;
 }
-.beta-cancel-icon svg {
+.v2-cancel-icon svg {
   width: 15px;
   height: 15px;
   fill: none;
@@ -207,20 +207,20 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.beta-cancel-icon:hover:not(:disabled) {
+.v2-cancel-icon:hover:not(:disabled) {
   background: var(--danger-soft);
   border-color: var(--danger-line);
   color: var(--danger);
 }
-.beta-cancel-icon.is-uncancel:hover:not(:disabled) {
+.v2-cancel-icon.is-uncancel:hover:not(:disabled) {
   background: var(--surface-3);
   border-color: var(--line-strong);
   color: var(--ok);
 }
-.beta-cancel-icon:disabled { opacity: .3; cursor: default; }
+.v2-cancel-icon:disabled { opacity: .3; cursor: default; }
 
 /* Kétlépcsős lemondás: előbb megerősítés, hogy ne legyen téves koppintás. */
-.beta-confirm {
+.v2-confirm {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -230,25 +230,112 @@
   font-size: .82rem;
   color: var(--text);
 }
-.beta-confirm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.v2-confirm-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* Múltbeli napok halványan, hogy a figyelem a mai és a jövőbeli napokon legyen. */
-.beta-day.is-past { opacity: .55; }
-.beta-day.is-past.day-today { opacity: 1; }
-.beta-day.is-past .beta-cancel-icon { opacity: .25; }
+.v2-day.is-past { opacity: .55; }
+.v2-day.is-past.day-today { opacity: 1; }
+.v2-day.is-past .v2-cancel-icon { opacity: .25; }
 
 @media (max-width: 640px) {
-  .beta-strip-view { padding: 8px 12px 0; }
-  .beta-strip { padding: 10px; }
-  .week-days.beta-days { padding: 0 16px; }
-  .beta-day-toggle { padding: 10px 4px 10px 10px; gap: 8px; }
-  .beta-cancel-icon { width: 30px; height: 30px; margin-right: 8px; }
+  .v2-strip-view { padding: 8px 12px 0; }
+  .v2-strip { padding: 10px; }
+  .week-days.v2-days { padding: 0 16px; }
+  .v2-day-toggle { padding: 10px 4px 10px 10px; gap: 8px; }
+  .v2-cancel-icon { width: 30px; height: 30px; margin-right: 8px; }
 }
 
 @media (max-width: 420px) {
-  .beta-day .day-badge { font-size: .66rem; }
-  .beta-chevron svg { width: 14px; height: 14px; }
+  .v2-day .day-badge { font-size: .66rem; }
+  .v2-chevron svg { width: 14px; height: 14px; }
   .strip-wd { font-size: .58rem; }
   .strip-date { font-size: .8rem; }
   .strip-progress { font-size: .68rem; }
+}
+
+/* ---------- beállítások menü + V1/V2 kapcsoló ---------- */
+.settings-wrap { position: relative; flex: none; }
+.topbar .btn.icon-only {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.topbar .btn.icon-only .btn-icon {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+}
+.settings-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: 248px;
+  max-width: calc(100vw - 24px);
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-label {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.segmented {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.segmented-btn {
+  padding: 6px 14px;
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted);
+  text-decoration: none;
+  background: transparent;
+  transition: background-color .15s, color .15s;
+}
+.segmented-btn + .segmented-btn { border-left: 1px solid var(--line); }
+.segmented-btn:hover { background: var(--surface-2); color: var(--text); }
+.segmented-btn.is-active {
+  background: var(--primary);
+  color: var(--on-accent);
+}
+.settings-note {
+  margin: 10px 0 0;
+  font-size: .7rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .topbar .btn.icon-only { width: 32px; height: 32px; }
+  .topbar .btn.icon-only .btn-icon { width: 16px; height: 16px; }
+  .settings-menu { width: 236px; }
+}
+
+/* Szülői fióknál mobilon három szöveges gomb is van a topbarban; ilyenkor
+   ikonméretre vesszük őket, hogy a gyermek neve ne szoruljon ki. */
+@media (max-width: 640px) {
+  body.is-parent .topbar .topbar-btn-text { display: none; }
+  body.is-parent .topbar .btn:not(.icon-only) {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+  }
+  body.is-parent .topbar .btn:not(.icon-only) .btn-icon { margin: 0; }
 }

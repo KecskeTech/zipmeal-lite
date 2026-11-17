@@ -81,13 +81,14 @@ mezőből csak a választási betűt küldjük a `choose-meal` kérésben, tehá
 "Ebéd A" értékéből "A" lesz. Reggeli és vacsora esetén ez üres, és a kód ilyenkor
 "A"-t küld.
 
-## Beta felület
+## V2 felület
 
-A kísérleti, átdolgozott heti nézet a `/beta` címen érhető el
-(`https://ziplite.kecske.win/beta`). Ugyanaz az `app.js` és cache-logika fut,
-mint az éles nézetben. A `beta.html` `data-beta="1"` attribútuma kapcsolja be a
+A kísérleti, átdolgozott heti nézet a `/v2` címen érhető el
+(`https://ziplite.kecske.win/v2`). Ugyanaz az `app.js` és cache-logika fut,
+mint az éles nézetben. A `v2.html` `data-v2="1"` attribútuma kapcsolja be a
 fejléc alatti heti csíkot, az összecsukható napokat és a sorba tett lemondásikont.
-Az éles főoldalt ez nem érinti. A beta `noindex`, így nem kerül a keresőbe.
+A topbar fogaskereke nyitja a beállításokat, ahol a V1/V2 felület egy sorban
+váltható. Az éles főoldalt ez nem érinti. A v2 `noindex`, így nem kerül a keresőbe.
 
 ## Fejlesztői demó API és fiók nélkül
 

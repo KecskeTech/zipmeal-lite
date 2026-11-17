@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hu" data-theme="dark" data-beta="1">
+<html lang="hu" data-theme="dark" data-v2="1">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -17,20 +17,20 @@
     }
   })();
 </script>
-<meta name="description" content="ZiPMEAL Lite kísérleti (beta) felület: heti áttekintés és összecsukható napok.">
+<meta name="description" content="ZiPMEAL Lite kísérleti (v2) felület: heti áttekintés és összecsukható napok.">
 <meta name="robots" content="noindex, nofollow">
-<link rel="canonical" href="https://ziplite.kecske.win/beta">
+<link rel="canonical" href="https://ziplite.kecske.win/v2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="ZiPMEAL Lite Beta">
-<title>ZiPMEAL Lite - Beta</title>
+<meta name="apple-mobile-web-app-title" content="ZiPMEAL Lite V2">
+<title>ZiPMEAL Lite - V2</title>
 <link rel="manifest" href="manifest.json">
 <link rel="license" href="LICENSE">
 <link rel="preconnect" href="https://zipmeal.hu" crossorigin>
 <link rel="dns-prefetch" href="https://zipmeal.hu">
 <link rel="preload" href="app.js" as="script">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="beta.css">
+<link rel="stylesheet" href="v2.css">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 </head>
@@ -46,7 +46,7 @@
           <path d="M21 15v7"/>
         </svg>
       </div>
-      <h1>ZiPMEAL <span>Lite</span><span class="beta-flag">BÉTA</span></h1>
+      <h1>ZiPMEAL <span>Lite</span><span class="v2-flag">V2</span></h1>
       <p class="subtitle">Ebédválasztás, ahogy kellene</p>
       <ul class="login-features">
         <li>
@@ -127,27 +127,47 @@
         <div class="user-info">
           <span id="user-name" class="user-name"></span>
         </div>
-        <button id="today-btn" class="btn ghost small" title="Ugrás a mai napra">
+        <button id="today-btn" class="btn ghost small" title="Ugrás a mai napra" aria-label="Ugrás a mai napra">
           <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="4" width="18" height="18" rx="2"/>
             <path d="M16 2v4M8 2v4M3 10h18"/>
             <circle cx="12" cy="16" r="2"/>
-          </svg>Mai nap
+          </svg><span class="topbar-btn-text">Mai nap</span>
         </button>
-        <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" hidden>
+        <button id="switch-diner-btn" class="btn ghost small" title="Étkező váltása" aria-label="Étkező váltása" hidden>
           <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
             <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>Gyermek
+          </svg><span class="topbar-btn-text">Gyermek</span>
         </button>
-        <button id="logout-btn" class="btn ghost small" title="Kilépés">
+        <div class="settings-wrap">
+          <button id="settings-btn" class="btn ghost small icon-only" type="button"
+                  aria-label="Beállítások" title="Beállítások"
+                  aria-expanded="false" aria-controls="settings-menu">
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <div id="settings-menu" class="settings-menu" hidden>
+            <div class="settings-row">
+              <span class="settings-label">Felület</span>
+              <div class="segmented" role="group" aria-label="Felület verziója">
+                <a class="segmented-btn" href="./" aria-label="V1 felület">V1</a>
+                <a class="segmented-btn is-active" href="./v2.html" aria-current="page" aria-label="V2 felület, jelenlegi">V2</a>
+              </div>
+            </div>
+            <p class="settings-note">A V2 kísérleti nézet. A V1 a megszokott heti kártyás felület.</p>
+          </div>
+        </div>
+        <button id="logout-btn" class="btn ghost small" title="Kilépés" aria-label="Kilépés">
           <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <path d="M16 17l5-5-5-5"/>
             <path d="M21 12H9"/>
-          </svg>Kilépés
+          </svg><span class="topbar-btn-text">Kilépés</span>
         </button>
       </div>
     </header>
@@ -155,8 +175,8 @@
     <p id="offline-banner" class="offline-banner" hidden></p>
 
     <!-- A heti áttekintés a fejléc ALATT, de még a hét-navigáció előtt. -->
-    <div class="view beta-strip-view">
-      <div id="week-strip" class="beta-strip" hidden></div>
+    <div class="view v2-strip-view">
+      <div id="week-strip" class="v2-strip" hidden></div>
     </div>
 
     <div class="view">
@@ -176,7 +196,7 @@
       <main id="days" class="days"></main>
       <p id="status" class="toast" hidden></p>
       <footer class="foot">
-        <span>ZiPMEAL Lite - kísérleti (beta) nézet · nem hivatalos kliens · AGPL-3.0 ·
+        <span>ZiPMEAL Lite - kísérleti (v2) nézet · nem hivatalos kliens · AGPL-3.0 ·
         <a href="https://github.com/KecskeTech/zipmeal-lite" target="_blank" rel="noopener">forráskód</a></span>
         <span class="foot-seo"><a href="/">Vissza a normál felületre</a></span>
       </footer>
