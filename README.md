@@ -50,11 +50,11 @@ jelzi az offline állapotot.
 
 ## SEO-aloldalak
 
-A főoldal mellett önálló, statikus aloldalak is vannak a gyakori keresésekre:
+SEO oldalak, hogy minél több ember találja meg a googlen ezt a projektet:
 `zipmeal-bejelentkezes.html`, `zipmeal-etlap.html`, `zipmeal-zalaegerszeg.html`,
 `zipmeal-kaposvar.html` és `zipmeal-web.html`. A fájlok `.html` végződésűek, a
 kanonikus URL viszont kiterjesztés nélküli, például `/zipmeal-etlap`, mert a GitHub
-Pages ezt is kiszolgálja. Az oldalak valódi tartalmat adnak, nem átirányítások.
+Pages ezt is kiszolgálja. Az oldalakon valódi tartalom van.
 Szerepelnek a `sitemap.xml`-ben, és a főoldalról is linkeljük őket. Új aloldalnál a
 `sitemap.xml`-t és a `sw.js` `SHELL` listáját is frissíteni kell.
 
